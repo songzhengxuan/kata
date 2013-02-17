@@ -1,0 +1,6 @@
+#ifndef ADDSALARIEDEMPLOYEE_H
+#define ADDSALARIEDEMPLOYEE_H
+
+
+
+#endif

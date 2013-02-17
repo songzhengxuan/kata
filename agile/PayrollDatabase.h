@@ -2,6 +2,7 @@
 #define PAYROLLDATABASE_H
 
 #include <map>
+using std::map;
 
 class Employee;
 
@@ -15,5 +16,5 @@ class PayrollDatabase {
 		}
 	private:
 		map<int, Employee*> itsEmployees;
-}
+};
 #endif 
