@@ -1,0 +1,2 @@
+[done] add 3 paymentclassification class
+[->todo] understand the pay schedule class, read the text

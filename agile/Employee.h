@@ -1,26 +1,39 @@
 #ifndef EMPLOYEE_H
 #define EMPLOYEE_H
 #include <string>
+
 using std::string;
 
 class PaymentClassification;
 class PaymentSchedule;
+class PaymentMethod;
+
 class Employee {
 	public:
-		virtual ~Employee();
+		virtual ~Employee(){};
+		Employee(int empid, string name, string address);
 
-		void setClassification(PaymentClassification *classification);
+		void SetClassification(PaymentClassification *classification);
+		PaymentClassification* GetClassification();
 
-		void setSchedule(PaymentSchedule *schedule);
+		void SetSchedule(PaymentSchedule *schedule);
+		PaymentSchedule* GetSchedule();
 
-		void setName(string name);
+		void SetName(string name);
+		string GetName();
 
-		void setAddress(string address);
+		void SetMethod(PaymentMethod *method);
+		PaymentMethod* GetMethod();
+
+		void SetAddress(string address);
+		string GetAddress();
 
 	private:
-		PaymentClassification *itsClassification;
-		PaymentSchedule *itsSchedule;
+		int itsEmpId;
 		string itsName;
 		string itsAddress;
+		PaymentClassification *itsClassification;
+		PaymentSchedule *itsSchedule;
+		PaymentMethod *itsMethod;
 };
 #endif

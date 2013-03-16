@@ -3,7 +3,7 @@
 
 class Transaction {
 	public :
-		virtual ~Transaction();
+		virtual ~Transaction() {};
 		virtual void Execute() = 0;
 };
 

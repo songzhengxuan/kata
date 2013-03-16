@@ -1,17 +1,47 @@
 #include "Employee.h"
 
-void Employee::setClassification(PaymentClassification *classification) {
+Employee::Employee(int empId, string name, string address) {
+	itsEmpId = empId;
+	itsName = name;
+	itsAddress = address;
+}
+
+void Employee::SetClassification(PaymentClassification *classification) {
 	itsClassification = classification;
 }
 
-void Employee::setSchedule(PaymentSchedule *schedule) {
+PaymentClassification* Employee::GetClassification() {
+	return itsClassification;
+}
+
+void Employee::SetSchedule(PaymentSchedule *schedule) {
 	itsSchedule = schedule;
 }
 
-void Employee::setName(string name) {
+PaymentSchedule* Employee::GetSchedule() {
+	return itsSchedule;
+}
+
+void Employee::SetName(string name) {
 	itsName = name;
 }
 
-void Employee::setAddress(string address) {
+string Employee::GetName() {
+	return itsName;
+}
+
+void Employee::SetAddress(string address) {
 	itsAddress = address;
+}
+
+string Employee::GetAddress() {
+	return itsAddress;
+}
+
+void Employee::SetMethod(PaymentMethod *method) {
+	itsMethod = method;
+}
+
+PaymentMethod* Employee::GetMethod() {
+	return itsMethod;
 }

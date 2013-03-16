@@ -17,4 +17,6 @@ class PayrollDatabase {
 	private:
 		map<int, Employee*> itsEmployees;
 };
+
+extern PayrollDatabase GPayrollDatabase;
 #endif 

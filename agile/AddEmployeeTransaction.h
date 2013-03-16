@@ -10,7 +10,7 @@ class PaymentSchedule;
 
 class AddEmployeeTransaction : public Transaction {
 	public:
-		virtual ~AddEmployeeTransaction();
+		virtual ~AddEmployeeTransaction() {};
 		AddEmployeeTransaction(int empid, string name, string address);
 		virtual PaymentClassification* GetClassification() const = 0;
 		virtual PaymentSchedule* GetSchedule() const = 0;

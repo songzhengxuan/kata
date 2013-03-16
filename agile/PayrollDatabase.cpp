@@ -1,7 +1,7 @@
 #include "PayrollDatabase.h"
 #include "Employee.h"
 
-PayrollDatabase GpayrollDatabase;
+PayrollDatabase GPayrollDatabase;
 
 PayrollDatabase::~PayrollDatabase() {
 }

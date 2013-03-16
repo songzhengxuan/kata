@@ -1,0 +1,12 @@
+#ifndef HOURLYCLASSIFICATION_H
+#define HOURLYCLASSIFICATION_H
+#include "PaymentClassification.h"
+class HourlyClassification : public PaymentClassification {
+	public:
+		~HourlyClassification() {}
+	private:
+		double HourlyRate;
+};
+
+#endif
+
