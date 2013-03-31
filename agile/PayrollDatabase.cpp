@@ -14,4 +14,8 @@ void PayrollDatabase::AddEmployee(int empid, Employee* e) {
 	itsEmployees[empid] = e;
 }
 
+void PayrollDatabase::DeleteEmployee(int empid) {
+	itsEmployees.erase(empid);	
+}
+
 

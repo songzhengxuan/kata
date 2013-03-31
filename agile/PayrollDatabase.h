@@ -11,6 +11,7 @@ class PayrollDatabase {
 		virtual ~PayrollDatabase();
 		Employee* GetEmployee(int empId);
 		void AddEmployee(int empid, Employee*);
+		void DeleteEmployee(int empid);
 		void clear() {
 			itsEmployees.clear();
 		}

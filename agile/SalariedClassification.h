@@ -5,6 +5,7 @@ class SalariedClassification : public PaymentClassification {
 	public:
 		~SalariedClassification() {}
 		SalariedClassification(double itsSalary);
+		double GetSalary();
 
 	private:
 		double Salary;

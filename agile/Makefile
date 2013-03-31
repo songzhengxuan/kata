@@ -1,6 +1,9 @@
 HEADERS = \
 	AddEmployeeTransaction.h \
 	AddSalariedEmployee.h \
+	AddHourlyEmployee.h \
+	AddCommissionedEmployee.h \
+	DeleteEmployeeTransaction.h \
 	BiweeklySchedule.h \
 	ChangeClassificationTransaction.h \
 	ChangeEmployeeTransaction.h \
@@ -20,7 +23,10 @@ HEADERS = \
 
 CPP_FILES = \
 	AddEmployeeTransaction.cpp \
-	AddSalaredEmployee.cpp \
+	AddSalariedEmployee.cpp \
+	AddHourlyEmployee.cpp \
+	AddCommissionedEmployee.cpp \
+	DeleteEmployeeTransaction.cpp \
 	BiweeklySchedule.cpp \
 	Employee.cpp \
 	HoldMethod.cpp \
@@ -30,6 +36,7 @@ CPP_FILES = \
 	PayrollDatabase.cpp \
 	PayrollTest.cpp \
 	SalariedClassification.cpp \
+	HourlyClassification.cpp \
 	WeeklySchedule.cpp
 
 agile: ${HEADERS} ${CPP_FILES}
