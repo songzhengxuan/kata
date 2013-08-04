@@ -13,7 +13,7 @@ SECTION .data
 	ASICOUT: db "|................|",10
 	HEXOUT: db "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
 	ASIC_TAB:
-db 2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,09h,0ah,2Eh,2Eh,2Eh,2Eh,2Eh
+db 2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh
 db 2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh
 db 20h,21h,22h,23h,24h,25h,26h,27h,28h,29h,2ah,2bh,2ch,2dh,2eh,2fh
 db 30h,31h,32h,33h,34h,35h,36h,37h,38h,39h,3ah,3bh,3ch,3dh,3eh,3fh
@@ -32,6 +32,9 @@ db 2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh,2Eh
 	
 
 SECTION .bss
+	INPUTBUFLEN EQU 16
+	InputBuf resb INPUTBUFLEN
+	
 	ASICBUFLEN EQU 19
 	AsicOutBuf resb ASICBUFLEN 
 
@@ -83,18 +86,29 @@ print_line:
 _start:
 	nop
 	nop
+read_input:
 	call clear_line
+	mov eax, 3
+	mov ebx, 0
+	mov ecx, InputBuf
+	mov edx, INPUTBUFLEN
+	int 80h
+	cmp eax, 0
+	je done
 	mov ecx, 0
-	mov edx, 16
-	mov esi, TestIn
+	mov edx, eax
+	mov esi, InputBuf
 	mov edi, AsicOutBuf
 	add edi, 1
 	mov ebp, HexOutBuff
 convert_a_char:
 ; remember the current char 
+	xor eax, eax
 	mov al, byte [esi + ecx]
-	mov byte [edi + ecx], al
 	mov byte [TmpChar], al
+	mov al, byte [ASIC_TAB + eax]
+	mov byte [edi + ecx], al
+	mov al, [TmpChar]
 	and eax, 0f0H
 	shr eax, 4
 	mov bl, byte [HexValueTable + eax]
@@ -110,6 +124,7 @@ convert_a_char:
 	cmp ecx, edx
 	jl convert_a_char
 	call print_line
+	jmp read_input
 
 done:
 	mov eax, 1

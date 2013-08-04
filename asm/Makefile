@@ -1,3 +1,9 @@
+russia: russia.asm
+	nasm -f elf -o russia.o russia.asm
+	ld -o russia.exe russia.o
+vidbuff1.exe: vidbuff1.asm
+	nasm -f elf -o vidbuff1.o vidbuff1.asm
+	ld -o vidbuff1.exe vidbuff1.o
 uppercaser1:	uppercaser1.o
 	ld -o uppercaser1 uppercaser1.o
 uppercaser1.o:	uppercaser1.asm
