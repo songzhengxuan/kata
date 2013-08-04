@@ -5,6 +5,10 @@
 ; 	ld -o hexdump2.exe hexdump2.o
 
 SECTION .data
+	TestIn: db "0123456789abcdefa test input for long"
+	TestInLen: equ $-TestIn
+
+	HexValueTable: db "0123456789abcdef"
 	TRASTABLE: db "0123456789ABCDEF"
 	ASICOUT: db "|................|",10
 	HEXOUT: db "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 "
@@ -33,6 +37,8 @@ SECTION .bss
 
 	HEXOUTBUFLEN EQU 48
 	HexOutBuff resb HEXOUTBUFLEN 
+
+	TmpChar resb 1
 
 SECTION .text
 
@@ -78,6 +84,31 @@ _start:
 	nop
 	nop
 	call clear_line
+	mov ecx, 0
+	mov edx, 16
+	mov esi, TestIn
+	mov edi, AsicOutBuf
+	add edi, 1
+	mov ebp, HexOutBuff
+convert_a_char:
+; remember the current char 
+	mov al, byte [esi + ecx]
+	mov byte [edi + ecx], al
+	mov byte [TmpChar], al
+	and eax, 0f0H
+	shr eax, 4
+	mov bl, byte [HexValueTable + eax]
+	mov byte [ebp], bl
+	inc ebp 
+	mov al, byte [TmpChar]
+	and eax, 0fH
+	mov bl, byte [HexValueTable + eax]
+	mov byte [ebp], bl
+	add ebp, 2
+; inc the ecx value to convert next char
+	inc ecx
+	cmp ecx, edx
+	jl convert_a_char
 	call print_line
 
 done:
