@@ -8,6 +8,8 @@ public class ContextLeakHolder {
     }
     
     public static void setContext(Context context) {
-        sContext = context;
+        if (sContext == null) {
+            sContext = context;
+        }
     }
 }

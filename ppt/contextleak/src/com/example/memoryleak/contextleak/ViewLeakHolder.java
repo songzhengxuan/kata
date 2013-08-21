@@ -8,6 +8,8 @@ public class ViewLeakHolder {
     }
     
     public static void setView(View view) {
-        sViewInstance = view;
+        if (sViewInstance == null) {
+            sViewInstance = view;
+        }
     }
 }
