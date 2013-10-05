@@ -4,6 +4,15 @@ section .data
 	EndLine db "------------",10
 	ONELINELEN equ $-EndLine
 	MiddleLine db "1----------1",10
+	
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;;;;;  termial control 
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	termios: times 36 db 0
+	stdin: equ 0
+	ICANON: equ 1<<1
+	ECHO: equ 1<<3
+
 
 section .bss
 	LineBuf resb 13
@@ -143,10 +152,98 @@ printLineBuf:
 	int 80h
 	popad
 	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; terminal control procedure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+read_stdin_termios:
+	push eax
+	push ebx
+	push ecx
+	push edx
+
+	mov eax, 36h
+	mov ebx, stdin
+	mov ecx, 5401h
+	mov edx, termios
+	int 80h
+
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
+	ret
+
+write_stdin_termios:
+	push eax
+	push ebx
+	push ecx
+	push edx
+
+	mov eax, 36h
+	mov ebx, stdin
+	mov ecx, 5402h
+	mov edx, termios
+	int 80h
+
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
+	ret
+
+canonical_off:
+	call read_stdin_termios
+
+	; clear canonical bit in local mode flags
+	push eax
+	mov eax, ICANON
+	not eax
+	and [termios+12], eax
+	pop eax
+
+	call write_stdin_termios
+	ret
+
+echo_off:
+	call read_stdin_termios
+	; clear echo bit in local mode flags
+	push eax
+	mov eax, ECHO
+	not eax
+	and [termios+12], eax
+	pop eax
+	call write_stdin_termios
+	ret
+
+canonical_on:
+	call read_stdin_termios
+
+	; set canonical bit in local mode flags
+	or dword [termios+12], ICANON
+	
+	call write_stdin_termios
+	ret
+
+echo_on:
+	call read_stdin_termios
+
+	; set echo bit in local mode flags
+	or dword [termios+12], ECHO
+
+	call write_stdin_termios
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  end of terminal control procedure
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
 
 _start:
 	nop
+	call echo_off
+	call canonical_off
 	call initPos
 refresh:
 	call updatePos 
@@ -155,6 +252,8 @@ refresh:
 	jmp refresh
 
 quit:
+	call echo_on
+	call canonical_on
 	mov eax, 1
 	mov ebx, 0
 	int 80h
