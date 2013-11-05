@@ -112,15 +112,18 @@ getShapePosition:
 .checkOneBit:
 	rcl ax, 1
 	jnc .continue
+	push bx
 	mov edx, ecx
 	and edx, 3h
 	add bh, dl
+	mov edx, ecx
 	shr edx, 2
 	add bl, dl
 	mov byte [edi], bh
 	inc edi
 	mov byte [edi], bl
 	inc edi
+	pop bx
 .continue:
 	inc ecx
 	cmp ecx, 16
