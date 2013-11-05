@@ -1,5 +1,5 @@
 russia: russia.asm
-	nasm -f elf -o russia.o russia.asm
+	nasm -f elf -g -o russia.o russia.asm
 	ld -o russia.exe russia.o
 vidbuff1.exe: vidbuff1.asm
 	nasm -f elf -o vidbuff1.o vidbuff1.asm

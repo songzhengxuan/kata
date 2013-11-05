@@ -4,6 +4,14 @@ section .data
 	EndLine db "------------",10
 	ONELINELEN equ $-EndLine
 	MiddleLine db "1----------1",10
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;; shapes
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	Shapes dw 17476,17476,17476,17476,0,1632,1632,0
+
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;; end of shapes
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;;;  termial control 
@@ -20,6 +28,9 @@ section .bss
 	PosX resb 1
 	PosY resb 1
 	UserInput resb 1
+	ShapeBuf resw 4
+	CurrentShape resb 1
+	CurrentRotate resb 0
 
 section .text
 	global _start
@@ -75,6 +86,48 @@ updatePos:
 	mov byte [PosY], al
 	jmp .endUpdatePos
 .endUpdatePos:
+	ret
+
+;;;;;;;;;;;;;;
+;; Parameter in:
+;;	ah: shape index
+;;	al: shape rotate
+;;	bh: shape matrix x
+;;	bl: shape matrix y
+;;	ecx: out buf
+getShapePosition:
+	push edx
+	push edi
+
+	mov edi, ecx; save the dest addr to edi
+	mov dx, ax ; first save ax
+	xor eax, eax
+	mov al, dh
+	shl ax, 2
+	add al, dl
+	adc ah, 0
+	shl ax, 1
+	mov ax, word [Shapes + eax]
+	mov ecx, 0
+.checkOneBit:
+	rcl ax, 1
+	jnc .continue
+	mov edx, ecx
+	and edx, 3h
+	add bh, dl
+	shr edx, 2
+	add bl, dl
+	mov byte [edi], bh
+	inc edi
+	mov byte [edi], bl
+	inc edi
+.continue:
+	inc ecx
+	cmp ecx, 16
+	jb .checkOneBit
+
+	pop edi
+	pop edx
 	ret
 
 updatePlate:
@@ -242,6 +295,21 @@ echo_on:
 
 _start:
 	nop
+
+	;; test 
+	mov ah, 0
+	mov al, 0
+	mov bl, 0
+	mov bh, 0
+	mov ecx, ShapeBuf
+	call getShapePosition
+	mov ax, word [ShapeBuf]
+	mov bx, word [ShapeBuf + 2]
+	mov cx, word [ShapeBuf + 4]
+	mov dx, word [ShapeBuf + 6]
+	nop
+	;; end of test
+
 	call echo_off
 	call canonical_off
 	call initPos
