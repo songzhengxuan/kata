@@ -7,7 +7,7 @@ section .data
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	Shapes dw 17476,17476,17476,17476,0,1632,1632,0
+	Shapes dw 17476,17476,17476,17476,0,1632,1632,0,56088,9792,56088,9792, 19668,17984,3648,19520
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; end of shapes
@@ -164,6 +164,24 @@ clearPlate:
 	popad
 	ret
 
+; update the shape stored in CX to plate
+updateShapeToPlate:
+	pushad
+	mov ebx, 0
+.updateOneShapePos:
+	mov al, byte [ecx + 1] ; +1 is the Y position
+	mov ah, 10
+	mul ah
+	mov dl, byte [ecx]
+	add al, dl
+	mov byte [Plate + eax], '*'
+	add ecx, 2
+	inc ebx
+	cmp ebx, 4
+	jne .updateOneShapePos
+	popad
+	ret
+
 printPlate:
 	pushad
 	call clearScreen
@@ -300,16 +318,21 @@ _start:
 	nop
 
 	;; test 
-	mov ah, 0
-	mov al, 0
-	mov bl, 0
-	mov bh, 0
+	mov ah, 3 ; shape index
+	mov al, 0 ; shape rotate index
+	mov bl, 4 ; matrix y
+	mov bh, 4 ; matrix x
 	mov ecx, ShapeBuf
 	call getShapePosition
 	mov ax, word [ShapeBuf]
 	mov bx, word [ShapeBuf + 2]
 	mov cx, word [ShapeBuf + 4]
 	mov dx, word [ShapeBuf + 6]
+	nop
+	call clearPlate
+	mov ecx, ShapeBuf	
+	call updateShapeToPlate
+	call printPlate
 	nop
 	;; end of test
 
