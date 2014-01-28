@@ -41,6 +41,7 @@ initPos:
 	ret
 
 updatePos:
+	pushad
 	mov eax, 3
 	mov ebx, 0
 	mov ecx, UserInput
@@ -86,6 +87,7 @@ updatePos:
 	mov byte [PosY], al
 	jmp .endUpdatePos
 .endUpdatePos:
+	popad
 	ret
 
 ;;;;;;;;;;;;;;
@@ -312,12 +314,44 @@ echo_on:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  end of terminal control procedure
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;start of test procedure
+test_move:
+	pushad
+	call echo_off
+	call canonical_off
+	mov byte [CurrentShape], 3
+	mov byte [CurrentRotate], 0
+	mov byte [PosY], 4
+	mov byte [PosX], 4
+.testrefresh:
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bl, byte [PosY] ; matrix y
+	mov bh, byte [PosX] ; matrix x
+	mov ecx, ShapeBuf
+	call getShapePosition
+	call clearPlate
+	mov ecx, ShapeBuf	
+	call updateShapeToPlate
+	call printPlate
+	call updatePos ;; wait to read next position
+	jmp .testrefresh
+.testquit:
+	popad
+	ret
 	
 
 _start:
 	nop
+	;; test move procedure
+	call test_move
+	jmp quit
+	;; end of test move procedure
 
 	;; test 
+	call echo_off
+	call canonical_off
 	mov ah, 3 ; shape index
 	mov al, 0 ; shape rotate index
 	mov bl, 4 ; matrix y
