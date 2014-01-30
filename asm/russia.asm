@@ -7,7 +7,11 @@ section .data
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	Shapes dw 17476,17476,17476,17476,0,1632,1632,0,56088,9792,56088,9792, 19668,17984,3648,19520
+	Shapes:
+	dw 17476,17476,17476,17476
+	dw 1632,1632,1632,1632
+	dw 56088,9792,56088,9792
+	dw 19668,17984,3648,19520
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; end of shapes
@@ -28,9 +32,9 @@ section .bss
 	PosX resb 1
 	PosY resb 1
 	UserInput resb 1
-	ShapeBuf resw 4
+	ShapeBuf resb 16
 	CurrentShape resb 1
-	CurrentRotate resb 0
+	CurrentRotate resb 1
 
 section .text
 	global _start
@@ -56,8 +60,7 @@ updatePos:
 	je .decX
 	cmp al, 'd'
 	je .incX
-	cmp al, 'q'
-	jmp quit
+	jmp .endUpdatePos
 .incX:
 	mov al, byte [PosX]
 	cmp al, 9
@@ -98,18 +101,19 @@ updatePos:
 ;;	bl: shape matrix y
 ;;	ecx: out buf
 getShapePosition:
-	push edx
+	pushad
 	push edi
 
 	mov edi, ecx; save the dest addr to edi
 	mov dx, ax ; first save ax
 	xor eax, eax
 	mov al, dh
-	shl ax, 2
+	shl ax, 3 ; each shape contains 4 one word description
 	add al, dl
 	adc ah, 0
-	shl ax, 1
-	mov ax, word [Shapes + eax]
+	add al, dl
+	adc ah, 0
+	mov ax, word [Shapes + eax] ;; fetch the shape description into ax
 	mov ecx, 0
 .checkOneBit:
 	rcl ax, 1
@@ -132,7 +136,7 @@ getShapePosition:
 	jb .checkOneBit
 
 	pop edi
-	pop edx
+	popad
 	ret
 
 updatePlate:
@@ -157,12 +161,17 @@ clearScreen:
 	ret
 
 clearPlate:
-	cld
 	pushad
+	cld
 	mov al, ' '
 	mov ecx, 200
 	mov edi, Plate
 	rep stosb
+	popad
+	ret
+
+stubforbreak:
+	pushad
 	popad
 	ret
 
@@ -322,16 +331,19 @@ test_move:
 	call canonical_off
 	mov byte [CurrentShape], 3
 	mov byte [CurrentRotate], 0
-	mov byte [PosY], 4
-	mov byte [PosX], 4
+	mov byte [PosY], 6
+	mov byte [PosX], 1
 .testrefresh:
+	call clearPlate
 	mov ah, byte [CurrentShape]; shape index
 	mov al, byte [CurrentRotate] ; shape rotate index
-	mov bl, byte [PosY] ; matrix y
+	;mov ah, 3
+	;mov al, 0
 	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	call stubforbreak
 	mov ecx, ShapeBuf
 	call getShapePosition
-	call clearPlate
 	mov ecx, ShapeBuf	
 	call updateShapeToPlate
 	call printPlate
