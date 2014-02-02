@@ -47,8 +47,13 @@ initPos:
 	mov byte [PosY], 0
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; return al: 0 for up, 1 for right, 2 for down, 3 for left
 updatePos:
-	pushad
+	push ebx
+	push ecx
+	push edx
+
 	mov eax, 3
 	mov ebx, 0
 	mov ecx, UserInput
@@ -66,34 +71,32 @@ updatePos:
 	jmp .endUpdatePos
 .incX:
 	mov al, byte [PosX]
-	;cmp al, 9
-	;jae .endUpdatePos
 	add al, 1
 	mov byte [PosX], al
+	mov al, 1
 	jmp .endUpdatePos
 .decX:
 	mov al, byte [PosX]
-	;cmp al, 0
-	;je .endUpdatePos
 	sub al, 1
 	mov byte [PosX], al
+	mov al, 3
 	jmp .endUpdatePos
 .incY:
 	mov al, byte [PosY]
-	cmp al, 19
-	jae .endUpdatePos
 	add al, 1
 	mov byte [PosY], al
+	mov al, 2
 	jmp .endUpdatePos
 .decY:
 	mov al, byte [PosY]
-	cmp al, 0
-	je .endUpdatePos
 	sub al, 1
 	mov byte [PosY], al
+	mov al, 0
 	jmp .endUpdatePos
 .endUpdatePos:
-	popad
+	pop edx
+	pop ecx
+	pop ebx
 	ret
 
 ;;;;;;;;;;;;;;
@@ -161,15 +164,17 @@ restoreCurrentPosition:
 	mov byte [PosX], al
 	mov al, byte [PosYBuf]
 	mov byte [PosY], al
+	pop ax
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; call this to check if the parameter positions is valid 
 ;; in $ecx: the shapebuf contains 4 point position
 ;; out $al: return 0 if the result is valid
-;;			return 1 if the result is invalid but current shape is still
-;;			return -1 if the result is invlaid and need generate next
-checkShapeValidity:
+;;			return 1 if the result is invalid but current is still alive
+;;			return 2 if the current should add to fixed set 
+checkPositionValidity:
+	mov al, 2
 	ret
 
 
@@ -275,6 +280,8 @@ updateShapeToPlate:
 	popad
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; paint the plate to screen, first paint the fixed set to plate
 paintPlate:
 	pushad
 	call clearTerminalScreen
@@ -428,8 +435,22 @@ test_move:
 	;;call addShapeToFixedSet
 	call updateShapeToPlate
 	call paintPlate
+	call saveCurrentPosition
 	call updatePos ;; wait to read next position
-	call checkShapeValidity
+	call checkPositionValidity
+	cmp al, 0 
+	je .check_case0
+	cmp al, 1
+	je .check_case1
+	cmp al, 2
+	je .check_case2
+.check_case0:
+	jmp .testrefresh
+.check_case1:
+	call restoreCurrentPosition
+	jmp .testrefresh
+.check_case2:
+	call addShapeToFixedSet
 	jmp .testrefresh
 .testquit:
 	popad
