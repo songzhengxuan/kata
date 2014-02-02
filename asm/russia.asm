@@ -208,10 +208,15 @@ addShapeToFixedSet:
 paintFixedSetToPlate:
 	pushad 
 	cld
-	mov esi, FixedSet
-	mov edi, Plate
 	mov ecx, 200
-	rep movsb 
+.testOneFixed:
+	mov al, byte [FixedSet + ecx - 1]
+	cmp al, '*'
+	jne .testContinue
+	mov byte [Plate + ecx -1], '*'
+.testContinue:
+	sub ecx, 1
+	jnz .testOneFixed
 	popad
 	ret
 
@@ -420,8 +425,8 @@ test_move:
 	mov ecx, ShapeBuf
 	call getShapePosition
 	mov ecx, ShapeBuf	
-	call addShapeToFixedSet
-	;;call updateShapeToPlate
+	;;call addShapeToFixedSet
+	call updateShapeToPlate
 	call paintPlate
 	call updatePos ;; wait to read next position
 	call checkShapeValidity
