@@ -169,12 +169,36 @@ restoreCurrentPosition:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; call this to check if the parameter positions is valid 
+;; in $al: last move direction
 ;; in $ecx: the shapebuf contains 4 point position
 ;; out $al: return 0 if the result is valid
 ;;			return 1 if the result is invalid but current is still alive
 ;;			return 2 if the current should add to fixed set 
 checkPositionValidity:
-	mov al, 2
+	push edx
+	push ebx
+	mov al, 0 ;; set the default value
+	mov edx, 0
+	;; first check if all the position is in valid range
+.checkRange:
+	mov bl, byte [ecx + 2 * edx] ;; first check x position
+	cmp bl, 10
+	jae .rangeInvalid
+	mov bl, byte [ecx + 2 * edx + 1] ;; then check y position
+	cmp bl, 20
+	jae .rangeInvalid
+	add edx, 1 ;; loop
+	cmp edx, 4
+	je .quit
+	jmp .checkRange
+
+.rangeInvalid:
+	cmp al, 2
+	je .quit
+	mov al, 1
+.quit:
+	pop ebx
+	pop edx
 	ret
 
 
@@ -437,6 +461,15 @@ test_move:
 	call paintPlate
 	call saveCurrentPosition
 	call updatePos ;; wait to read next position
+	push ax ;; save the move direction
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	mov ecx, ShapeBuf
+	call getShapePosition ;; save the new shape into ShapeBuf
+	pop ax ;; restore the move direction
+	mov ecx, ShapeBuf
 	call checkPositionValidity
 	cmp al, 0 
 	je .check_case0
