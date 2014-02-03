@@ -108,7 +108,6 @@ updatePos:
 ;;	ecx: out buf
 getShapePosition:
 	pushad
-	push edi
 
 	mov edi, ecx; save the dest addr to edi
 	mov dx, ax ; first save ax
@@ -141,7 +140,6 @@ getShapePosition:
 	cmp ecx, 16
 	jb .checkOneBit
 
-	pop edi
 	popad
 	ret
 
@@ -177,7 +175,6 @@ restoreCurrentPosition:
 checkPositionValidity:
 	push edx
 	push ebx
-	mov al, 0 ;; set the default value
 	mov edx, 0
 	;; first check if all the position is in valid range
 .checkRange:
@@ -189,8 +186,9 @@ checkPositionValidity:
 	jae .rangeInvalid
 	add edx, 1 ;; loop
 	cmp edx, 4
-	je .quit
-	jmp .checkRange
+	jne .checkRange
+	mov al, 0 ;; set the default value
+	jmp .quit
 
 .rangeInvalid:
 	cmp al, 2
@@ -229,6 +227,17 @@ addShapeToFixedSet:
 	mov byte [FixedSet + eax], '*'
 	sub ecx, 1
 	jnz .addOnePoint
+	popad
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; generate a new shape and set it's position to 4, 0
+generateNewShape:
+	pushad
+	mov byte [CurrentShape], 1
+	mov byte [CurrentRotate], 0
+	mov byte [PosX], 4
+	mov byte [PosY], 0
 	popad
 	ret
 
@@ -445,7 +454,7 @@ test_move:
 	call clearFixedSet
 	mov byte [CurrentShape], 3
 	mov byte [CurrentRotate], 0
-	mov byte [PosY], 6
+	mov byte [PosY], 17
 	mov byte [PosX], 1
 .testrefresh:
 	call clearPlate
@@ -461,6 +470,7 @@ test_move:
 	call paintPlate
 	call saveCurrentPosition
 	call updatePos ;; wait to read next position
+	call stubforbreak
 	push ax ;; save the move direction
 	mov ah, byte [CurrentShape]; shape index
 	mov al, byte [CurrentRotate] ; shape rotate index
@@ -468,7 +478,9 @@ test_move:
 	mov bl, byte [PosY] ; matrix y
 	mov ecx, ShapeBuf
 	call getShapePosition ;; save the new shape into ShapeBuf
+	call stubforbreak
 	pop ax ;; restore the move direction
+	call stubforbreak
 	mov ecx, ShapeBuf
 	call checkPositionValidity
 	cmp al, 0 
@@ -483,7 +495,15 @@ test_move:
 	call restoreCurrentPosition
 	jmp .testrefresh
 .check_case2:
+	call restoreCurrentPosition
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	mov ecx, ShapeBuf
+	call getShapePosition ;; save the new shape into ShapeBuf
 	call addShapeToFixedSet
+	call generateNewShape
 	jmp .testrefresh
 .testquit:
 	popad
