@@ -35,6 +35,7 @@ section .bss
 	PosXBuf resb 1
 	PosYBuf resb 1
 	UserInput resb 1
+	LastMoveDirection resb 1
 	ShapeBuf resb 16
 	CurrentShape resb 1
 	CurrentRotate resb 1
@@ -167,30 +168,47 @@ restoreCurrentPosition:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; call this to check if the parameter positions is valid 
-;; in $al: last move direction
+;; in $al: last move direction, eax will be change
 ;; in $ecx: the shapebuf contains 4 point position
-;; out $al: return 0 if the result is valid
+;; out $eax(al): return 0 if the result is valid
 ;;			return 1 if the result is invalid but current is still alive
 ;;			return 2 if the current should add to fixed set 
 checkPositionValidity:
 	push edx
 	push ebx
+	mov byte [LastMoveDirection], al
 	mov edx, 0
-	;; first check if all the position is in valid range
-.checkRange:
-	mov bl, byte [ecx + 2 * edx] ;; first check x position
+.checkOnePosition: 
+	;; first check x position
+	mov bl, byte [ecx + 2 * edx]
 	cmp bl, 10
 	jae .rangeInvalid
+	;; then check y position
 	mov bl, byte [ecx + 2 * edx + 1] ;; then check y position
 	cmp bl, 20
 	jae .rangeInvalid
-	add edx, 1 ;; loop
+
+	;; then check if is occupied
+	xor eax, eax
+	mov ah, bl
+	mov al, 10
+	mul ah
+	add al, byte [ecx + 2 * edx] ;;
+	adc ah, 0
+	mov bl, byte [FixedSet + eax];
+	cmp bl, '*'
+	je .rangeInvalid
+
+	add edx, 1 ;; checkOnePosition loop
 	cmp edx, 4
-	jne .checkRange
+	jne .checkOnePosition
+
+	;; all check passed
 	mov al, 0 ;; set the default value
 	jmp .quit
 
 .rangeInvalid:
+	mov al, byte [LastMoveDirection]
 	cmp al, 2
 	je .quit
 	mov al, 1
