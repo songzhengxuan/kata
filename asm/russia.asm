@@ -7,7 +7,11 @@ section .data
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	Shapes dw 17476,17476,17476,17476,0,1632,1632,0,56088,9792,56088,9792, 19668,17984,3648,19520
+	Shapes:
+	dw 17476,17476,17476,17476
+	dw 1632,1632,1632,1632
+	dw 56088,9792,56088,9792
+	dw 19668,17984,3648,19520
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; end of shapes
@@ -25,12 +29,16 @@ section .data
 section .bss
 	LineBuf resb 13
 	Plate resb 200
+	FixedSet resb 200
 	PosX resb 1
 	PosY resb 1
+	PosXBuf resb 1
+	PosYBuf resb 1
 	UserInput resb 1
-	ShapeBuf resw 4
+	LastMoveDirection resb 1
+	ShapeBuf resb 16
 	CurrentShape resb 1
-	CurrentRotate resb 0
+	CurrentRotate resb 1
 
 section .text
 	global _start
@@ -40,7 +48,13 @@ initPos:
 	mov byte [PosY], 0
 	ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; return al: 0 for up, 1 for right, 2 for down, 3 for left
 updatePos:
+	push ebx
+	push ecx
+	push edx
+
 	mov eax, 3
 	mov ebx, 0
 	mov ecx, UserInput
@@ -55,37 +69,35 @@ updatePos:
 	je .decX
 	cmp al, 'd'
 	je .incX
-	cmp al, 'q'
-	jmp quit
+	jmp .endUpdatePos
 .incX:
 	mov al, byte [PosX]
-	cmp al, 9
-	jae .endUpdatePos
 	add al, 1
 	mov byte [PosX], al
+	mov al, 1
 	jmp .endUpdatePos
 .decX:
 	mov al, byte [PosX]
-	cmp al, 0
-	je .endUpdatePos
 	sub al, 1
 	mov byte [PosX], al
+	mov al, 3
 	jmp .endUpdatePos
 .incY:
 	mov al, byte [PosY]
-	cmp al, 19
-	jae .endUpdatePos
 	add al, 1
 	mov byte [PosY], al
+	mov al, 2
 	jmp .endUpdatePos
 .decY:
 	mov al, byte [PosY]
-	cmp al, 0
-	je .endUpdatePos
 	sub al, 1
 	mov byte [PosY], al
+	mov al, 0
 	jmp .endUpdatePos
 .endUpdatePos:
+	pop edx
+	pop ecx
+	pop ebx
 	ret
 
 ;;;;;;;;;;;;;;
@@ -96,18 +108,18 @@ updatePos:
 ;;	bl: shape matrix y
 ;;	ecx: out buf
 getShapePosition:
-	push edx
-	push edi
+	pushad
 
 	mov edi, ecx; save the dest addr to edi
 	mov dx, ax ; first save ax
 	xor eax, eax
 	mov al, dh
-	shl ax, 2
+	shl ax, 3 ; each shape contains 4 one word description
 	add al, dl
 	adc ah, 0
-	shl ax, 1
-	mov ax, word [Shapes + eax]
+	add al, dl
+	adc ah, 0
+	mov ax, word [Shapes + eax] ;; fetch the shape description into ax
 	mov ecx, 0
 .checkOneBit:
 	rcl ax, 1
@@ -129,8 +141,139 @@ getShapePosition:
 	cmp ecx, 16
 	jb .checkOneBit
 
-	pop edi
+	popad
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; call this to save the current position to buf
+saveCurrentPosition:
+	push ax
+	mov al, byte [PosX]
+	mov byte [PosXBuf], al
+	mov al, byte [PosY]
+	mov byte [PosYBuf], al
+	pop ax
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; call this to restore the current position to buf
+restoreCurrentPosition:
+	push ax
+	mov al, byte [PosXBuf]
+	mov byte [PosX], al
+	mov al, byte [PosYBuf]
+	mov byte [PosY], al
+	pop ax
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; call this to check if the parameter positions is valid 
+;; in $al: last move direction, eax will be change
+;; in $ecx: the shapebuf contains 4 point position
+;; out $eax(al): return 0 if the result is valid
+;;			return 1 if the result is invalid but current is still alive
+;;			return 2 if the current should add to fixed set 
+checkPositionValidity:
+	push edx
+	push ebx
+	mov byte [LastMoveDirection], al
+	mov edx, 0
+.checkOnePosition: 
+	;; first check x position
+	mov bl, byte [ecx + 2 * edx]
+	cmp bl, 10
+	jae .rangeInvalid
+	;; then check y position
+	mov bl, byte [ecx + 2 * edx + 1] ;; then check y position
+	cmp bl, 20
+	jae .rangeInvalid
+
+	;; then check if is occupied
+	xor eax, eax
+	mov ah, bl
+	mov al, 10
+	mul ah
+	add al, byte [ecx + 2 * edx] ;;
+	adc ah, 0
+	mov bl, byte [FixedSet + eax];
+	cmp bl, '*'
+	je .rangeInvalid
+
+	add edx, 1 ;; checkOnePosition loop
+	cmp edx, 4
+	jne .checkOnePosition
+
+	;; all check passed
+	mov al, 0 ;; set the default value
+	jmp .quit
+
+.rangeInvalid:
+	mov al, byte [LastMoveDirection]
+	cmp al, 2
+	je .quit
+	mov al, 1
+.quit:
+	pop ebx
 	pop edx
+	ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; clear the fixed set 
+clearFixedSet:
+	pushad
+	cld
+	mov al, ' '
+	mov ecx, 200
+	mov edi, FixedSet
+	rep stosb
+	popad
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; call four pshapes pointed by ecx to fixed set
+addShapeToFixedSet:
+	pushad
+	mov esi, ecx ;; move the input buf into esi
+	mov ecx, 4 ;; ecx use as count register now
+.addOnePoint:
+	xor eax, eax
+	mov ah, 10
+	mov al, byte [esi + 2 * ecx - 1]
+	mul ah
+	add al, byte [esi + 2 * ecx - 2]
+	mov byte [FixedSet + eax], '*'
+	sub ecx, 1
+	jnz .addOnePoint
+	popad
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; generate a new shape and set it's position to 4, 0
+generateNewShape:
+	pushad
+	mov byte [CurrentShape], 1
+	mov byte [CurrentRotate], 0
+	mov byte [PosX], 4
+	mov byte [PosY], 0
+	popad
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; draw the fixed set to the plate
+paintFixedSetToPlate:
+	pushad 
+	cld
+	mov ecx, 200
+.testOneFixed:
+	mov al, byte [FixedSet + ecx - 1]
+	cmp al, '*'
+	jne .testContinue
+	mov byte [Plate + ecx -1], '*'
+.testContinue:
+	sub ecx, 1
+	jnz .testOneFixed
+	popad
 	ret
 
 updatePlate:
@@ -144,7 +287,7 @@ updatePlate:
 	mov byte [Plate + eax], '*'
 	ret
 
-clearScreen:
+clearTerminalScreen:
 	pushad
 	mov eax, 4
 	mov ebx, 1
@@ -155,12 +298,18 @@ clearScreen:
 	ret
 
 clearPlate:
-	cld
 	pushad
+	cld
 	mov al, ' '
 	mov ecx, 200
 	mov edi, Plate
 	rep stosb
+	popad
+	ret
+
+
+stubforbreak:
+	pushad
 	popad
 	ret
 
@@ -182,32 +331,34 @@ updateShapeToPlate:
 	popad
 	ret
 
-printPlate:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; paint the plate to screen, first paint the fixed set to plate
+paintPlate:
 	pushad
-	call clearScreen
+	call clearTerminalScreen
 	; add the first line
 	mov ecx, ONELINELEN
 	mov esi, EndLine
 	mov edi, LineBuf
 	rep movsb
 	call printLineBuf
-	;
 	; print the middle 20 lines
 	mov ebx, 20
 	cld
+	call paintFixedSetToPlate
 	mov esi, Plate
 printOneMiddleLine:
-	mov al, '1'
+	mov al, '1' ;; print the left bound
 	mov edi, LineBuf
 	stosb
 	mov ecx, 10
 	rep movsb
-	mov al, '1'
+	mov al, '1' ;; print the right bound
 	stosb
 	call printLineBuf
 	sub ebx, 1
 	jnz printOneMiddleLine
-	; add the end line
+	; print the end line
 	mov ecx, ONELINELEN
 	mov esi, EndLine
 	mov edi, LineBuf
@@ -312,12 +463,81 @@ echo_on:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  end of terminal control procedure
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;start of test procedure
+test_move:
+	pushad
+	call echo_off
+	call canonical_off
+	call clearFixedSet
+	mov byte [CurrentShape], 3
+	mov byte [CurrentRotate], 0
+	mov byte [PosY], 17
+	mov byte [PosX], 1
+.testrefresh:
+	call clearPlate
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	mov ecx, ShapeBuf
+	call getShapePosition
+	mov ecx, ShapeBuf	
+	;;call addShapeToFixedSet
+	call updateShapeToPlate
+	call paintPlate
+	call saveCurrentPosition
+	call updatePos ;; wait to read next position
+	call stubforbreak
+	push ax ;; save the move direction
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	mov ecx, ShapeBuf
+	call getShapePosition ;; save the new shape into ShapeBuf
+	call stubforbreak
+	pop ax ;; restore the move direction
+	call stubforbreak
+	mov ecx, ShapeBuf
+	call checkPositionValidity
+	cmp al, 0 
+	je .check_case0
+	cmp al, 1
+	je .check_case1
+	cmp al, 2
+	je .check_case2
+.check_case0:
+	jmp .testrefresh
+.check_case1:
+	call restoreCurrentPosition
+	jmp .testrefresh
+.check_case2:
+	call restoreCurrentPosition
+	mov ah, byte [CurrentShape]; shape index
+	mov al, byte [CurrentRotate] ; shape rotate index
+	mov bh, byte [PosX] ; matrix x
+	mov bl, byte [PosY] ; matrix y
+	mov ecx, ShapeBuf
+	call getShapePosition ;; save the new shape into ShapeBuf
+	call addShapeToFixedSet
+	call generateNewShape
+	jmp .testrefresh
+.testquit:
+	popad
+	ret
 	
 
 _start:
 	nop
+	;; test move procedure
+	call test_move
+	jmp quit
+	;; end of test move procedure
 
 	;; test 
+	call echo_off
+	call canonical_off
 	mov ah, 3 ; shape index
 	mov al, 0 ; shape rotate index
 	mov bl, 4 ; matrix y
@@ -332,7 +552,7 @@ _start:
 	call clearPlate
 	mov ecx, ShapeBuf	
 	call updateShapeToPlate
-	call printPlate
+	call paintPlate
 	nop
 	;; end of test
 
@@ -342,7 +562,7 @@ _start:
 refresh:
 	call updatePos 
 	call updatePlate
-	call printPlate
+	call paintPlate
 	jmp refresh
 
 quit:
