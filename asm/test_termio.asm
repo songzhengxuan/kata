@@ -5,6 +5,9 @@ section .data
 	EndLine db "------------",10
 	ONELINELEN equ $-EndLine
 	MiddleLine db "1----------1",10
+	PlateHeight equ 24
+	PlateWidth equ 32
+	NEWONELINELEN equ 32
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -35,8 +38,9 @@ section .data
 section .bss
 	timer_count resb 4
 	timer_expire_count resb 1
-	LineBuf resb 13
-	Plate resb 200
+	LineBuf resb 32
+	Plate resb 768 ;; 32 * 24
+	PaintCountBuffer resb 1
 	FixedSet resb 200
 	PosX resb 1
 	PosY resb 1
@@ -411,16 +415,6 @@ clearAllFullLine:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; generate a new shape and set it's position to 4, 0
-generateNewShape:
-	pushad
-	mov al, byte [CurrentShape]
-	mov byte [CurrentShape], 1
-	mov byte [CurrentRotate], 0
-	mov byte [PosX], 4
-	mov byte [PosY], 0
-	popad
-	ret
-
 generateNewShape2:
 	pushad
 	;; open the file
@@ -518,6 +512,7 @@ updateShapeToPlate:
 	popad
 	ret
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; paint the plate to screen, first paint the fixed set to plate
 paintPlate:
@@ -551,6 +546,67 @@ printOneMiddleLine:
 	mov edi, LineBuf
 	rep movsb
 	call printLineBuf
+	popad
+	ret
+
+;;;;
+;; input: 
+;;		ah: the x pos of target char
+;;		al: the y pos of target char
+;;		bl: the char to draw on target pos
+drawOneCharToPlate:
+	pushad
+	mov edx, eax
+	mov eax, 0
+	mov al, dl
+	shl al, 5
+	add al, dh
+	mov byte [Plate + eax], bl
+	popad
+	ret
+
+
+clearPlate2:
+	pushad
+	mov ecx, 768
+.loop1:
+	mov byte [Plate + ecx], ' ' 
+	sub ecx, 1
+	jnz .loop1
+	mov ecx, 24
+.loop2:
+	mov eax, ecx
+	sub eax, 1
+	shl eax, 5
+	add eax, 31
+	mov byte [Plate + eax], 10
+	sub ecx, 1
+	jnz .loop2
+	popad
+	ret
+
+;; new paint plate 
+paintPlate2:
+	pushad
+	call clearTerminalScreen
+	mov eax, 0
+	mov byte [PaintCountBuffer], 24 
+	mov al, byte [PaintCountBuffer]
+	mov edi, 0
+.paintOneLine:
+	cmp al, 0
+	je .quit
+	mov ebx, 1
+	lea ecx, [Plate + edi]
+	mov eax, 4
+	mov edx, 32 
+	int 80h
+	add edi, 32
+	mov al, byte [PaintCountBuffer]
+	sub al, 1
+	mov byte [PaintCountBuffer], al
+	jmp .paintOneLine
+.quit:
 	popad
 	ret
 
@@ -738,6 +794,22 @@ test_move:
 
 _start:
 	nop
+	call clearTerminalScreen
+	call clearPlate2
+	mov al,0
+	mov ah,30
+	mov bl,97 
+	call drawOneCharToPlate
+	mov al,1
+	mov ah,0
+	mov bl,98 
+	call drawOneCharToPlate
+	mov al,1
+	mov ah,1
+	mov bl,99 
+	call drawOneCharToPlate
+	call paintPlate2
+	jmp quit
 	;; test move procedure
 	call test_move
 	jmp quit
