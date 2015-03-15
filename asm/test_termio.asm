@@ -1,6 +1,7 @@
 section .data
 	ClrHome db 27,"[2J", 27, "[01;01H"
 	CLRLEN equ $-ClrHome
+	filePath db "/dev/random", 0
 	EndLine db "------------",10
 	ONELINELEN equ $-EndLine
 	MiddleLine db "1----------1",10
@@ -44,6 +45,8 @@ section .bss
 	UserInput resb 1
 	LastMoveDirection resb 1
 	ShapeBuf resb 16
+	fileHandle resb 4
+	buffer resb 4
 	CurrentShape resb 1
 	CurrentRotate resb 1
 
@@ -418,6 +421,31 @@ generateNewShape:
 	popad
 	ret
 
+generateNewShape2:
+	pushad
+	;; open the file
+	mov ecx, 0
+	mov ebx, filePath
+	mov edx, 01FFh;
+	mov eax, 5
+	int 80h
+	mov dword [fileHandle], eax
+	;; read the file
+	mov ebx, dword [fileHandle]
+	mov ecx, buffer
+	mov eax, 3 ;; __NR_read
+	mov edx, 4
+	int 80h
+
+	mov al, byte [buffer]
+	and al, 3
+	mov byte [CurrentShape], al
+	mov byte [CurrentRotate], 0
+	mov byte [PosX], 4
+	mov byte [PosY], 0
+	popad
+	ret
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; draw the fixed set to the plate
 paintFixedSetToPlate:
@@ -701,7 +729,7 @@ test_move:
 	call clearAllFullLine
 	;; begin of test code
 	;; end of test code
-	call generateNewShape
+	call generateNewShape2
 	jmp .testrefresh
 .testquit:
 	popad

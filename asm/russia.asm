@@ -13,6 +13,8 @@ section .data
 	dw 56088,9792,56088,9792
 	dw 19668,17984,3648,19520
 
+	DebugOutput: db "------------",10
+
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; end of shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,6 +26,8 @@ section .data
 	stdin: equ 0
 	ICANON: equ 1<<1
 	ECHO: equ 1<<3
+	TIME: equ 1<<4
+	MIN: equ 1<<5
 
 
 section .bss
@@ -228,7 +232,7 @@ clearFixedSet:
 	mov edi, FixedSet
 	rep stosb
 	popad
-	ret
+ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; call four pshapes pointed by ecx to fixed set
@@ -245,6 +249,134 @@ addShapeToFixedSet:
 	mov byte [FixedSet + eax], '*'
 	sub ecx, 1
 	jnz .addOnePoint
+	popad
+	ret
+
+;; in:
+;;		al: the x position of target
+;;		ah: the y position of target
+;; out:
+;;		al: the target char
+getCharOfFixedSet:
+	push ebx
+	push edx
+	mov bl, al
+	mov bh, ah
+	mov eax, 0
+	mov al, bh 
+	mov ah, 10
+	mul ah
+	mov bh, 0
+	add ax, bx
+	mov al, byte [FixedSet + eax]
+	pop edx
+	pop ebx
+	ret
+
+;; in:
+;;		al: x
+;;		ah: y
+;;		bl: target char
+;; no ouput
+setCharOfFixedSet:
+	push edx
+	push ebx
+	mov bl, al
+	mov bh, ah
+	mov eax, 0
+	mov al, bh
+	mov ah, 10
+	mul ah
+	mov bh, 0
+	add ax, bx
+	pop ebx
+	mov byte [FixedSet + eax], bl
+	pop edx
+	ret
+
+;;in:
+;;		al: the y position of target line
+;;out:
+;;		ah: 1 if is all full, 0 if not all full
+isLineFull:
+	push ebx
+	push ecx
+	push edx
+	mov bl, al
+	mov cl, 10
+.isLineFullCheckOneChar:
+	sub cl, 1
+	mov al, cl 
+	mov ah, bl
+	call getCharOfFixedSet 
+	cmp al, 20h
+	je .lineIsNotfullExit
+	cmp cl, 0
+	jne .isLineFullCheckOneChar
+	jmp .lineIsFullExit
+.lineIsNotfullExit:
+	mov ah, 0
+	jmp .exit
+.lineIsFullExit:
+	mov ah, 1
+	jmp .exit
+.exit:
+	pop edx
+	pop ecx
+	pop ebx
+	ret
+
+;; in:
+;;		al: the y position of targetLine
+;; no output
+clearLine:
+	push ebx
+	push eax
+	push ecx
+	cmp al, 0
+	je .newheadline
+	mov bl, al
+	mov ah, 10
+	mul ah
+	mov cx, ax
+	add ax, 10
+.moveOneChar:
+	sub ax, 1
+	sub cx, 1
+	jz .newheadline
+	mov bl, byte[FixedSet + eax - 10]
+	mov byte[FixedSet + eax], bl
+	jmp .moveOneChar
+.newheadline:
+	mov ecx, 10
+.newACharInHead:
+	mov byte[FixedSet + ecx - 1], ' '
+	sub cx, 1
+	jnz .newACharInHead
+	pop ecx
+	pop eax
+	pop ebx
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;
+;; call to clear full line
+clearAllFullLine:
+	pushad
+	mov cl, 19
+.oneline:
+	mov al, cl
+	call isLineFull
+	cmp ah, 1
+	jne .continue
+	mov al, cl
+	call clearLine
+	add cl, 1
+.continue:
+	cmp cl, 0
+	je .quit
+	sub cl, 1
+	jmp .oneline
+.quit:
 	popad
 	ret
 
@@ -267,9 +399,9 @@ paintFixedSetToPlate:
 	mov ecx, 200
 .testOneFixed:
 	mov al, byte [FixedSet + ecx - 1]
-	cmp al, '*'
-	jne .testContinue
-	mov byte [Plate + ecx -1], '*'
+	cmp al, ' '
+	je .testContinue
+	mov byte [Plate + ecx -1], al
 .testContinue:
 	sub ecx, 1
 	jnz .testOneFixed
@@ -521,6 +653,9 @@ test_move:
 	mov ecx, ShapeBuf
 	call getShapePosition ;; save the new shape into ShapeBuf
 	call addShapeToFixedSet
+	call clearAllFullLine
+	;; begin of test code
+	;; end of test code
 	call generateNewShape
 	jmp .testrefresh
 .testquit:

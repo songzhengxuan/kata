@@ -1,6 +1,9 @@
+test_term: test_termio.asm
+	nasm -f elf32 -g -o test_termio.o test_termio.asm
+	ld -m elf_i386 -o test_termio test_termio.o
 russia: russia.asm
-	nasm -f elf -g -o russia.o russia.asm
-	ld -o russia.exe russia.o
+	nasm -f elf32 -g -o russia.o russia.asm
+	ld -m elf_i386 -o russia.exe russia.o
 vidbuff1.exe: vidbuff1.asm
 	nasm -f elf -o vidbuff1.o vidbuff1.asm
 	ld -o vidbuff1.exe vidbuff1.o
