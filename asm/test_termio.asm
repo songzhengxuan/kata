@@ -89,7 +89,7 @@ updatePos:
 	add al, 1
 	mov byte [timer_expire_count], al
 .debugPrint2:
-	cmp al, 2 
+	cmp al, 6 
 	jne .aTimerNotExpire
 	mov byte [timer_expire_count], 0
 	jmp .incY
@@ -440,34 +440,6 @@ generateNewShape2:
 	popad
 	ret
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; draw the fixed set to the plate
-paintFixedSetToPlate:
-	pushad 
-	cld
-	mov ecx, 200
-.testOneFixed:
-	mov al, byte [FixedSet + ecx - 1]
-	cmp al, ' '
-	je .testContinue
-	mov byte [Plate + ecx -1], al
-.testContinue:
-	sub ecx, 1
-	jnz .testOneFixed
-	popad
-	ret
-
-updatePlate:
-	call clearPlate
-	xor eax, eax
-	mov al, 10
-	mov ah, byte [PosY]
-	mul ah
-	add al, byte [PosX]
-	adc ah, 0
-	mov byte [Plate + eax], '*'
-	ret
-
 clearTerminalScreen:
 	pushad
 	mov eax, 4
@@ -478,17 +450,6 @@ clearTerminalScreen:
 	popad
 	ret
 
-clearPlate:
-	pushad
-	cld
-	mov al, ' '
-	mov ecx, 200
-	mov edi, Plate
-	rep stosb
-	popad
-	ret
-
-
 stubforbreak:
 	pushad
 	popad
@@ -497,57 +458,44 @@ stubforbreak:
 ; update the shape stored in CX to plate
 updateShapeToPlate:
 	pushad
-	mov ebx, 0
+	mov edx, 0
+	mov bl, '*'
 .updateOneShapePos:
 	mov al, byte [ecx + 1] ; +1 is the Y position
-	mov ah, 10
-	mul ah
-	mov dl, byte [ecx]
-	add al, dl
-	mov byte [Plate + eax], '*'
+	add al, 1
+	mov ah, byte [ecx]
+	add ah, 1
+	call drawOneCharToPlate
 	add ecx, 2
-	inc ebx
-	cmp ebx, 4
+	inc edx
+	cmp edx, 4
 	jne .updateOneShapePos
 	popad
 	ret
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; paint the plate to screen, first paint the fixed set to plate
-paintPlate:
+drawFixedSetToPlate:
 	pushad
-	call clearTerminalScreen
-	; add the first line
-	mov ecx, ONELINELEN
-	mov esi, EndLine
-	mov edi, LineBuf
-	rep movsb
-	call printLineBuf
-	; print the middle 20 lines
-	mov ebx, 20
-	cld
-	call paintFixedSetToPlate
-	mov esi, Plate
-printOneMiddleLine:
-	mov al, '1' ;; print the left bound
-	mov edi, LineBuf
-	stosb
-	mov ecx, 10
-	rep movsb
-	mov al, '1' ;; print the right bound
-	stosb
-	call printLineBuf
-	sub ebx, 1
-	jnz printOneMiddleLine
-	; print the end line
-	mov ecx, ONELINELEN
-	mov esi, EndLine
-	mov edi, LineBuf
-	rep movsb
-	call printLineBuf
+	mov esi, 0 
+	mov ecx, 20
+	mov al, 1
+	mov ah, 1
+.loopforline:
+.loopforsingle:
+	mov bl, byte [FixedSet + esi] 
+	call drawOneCharToPlate
+	add esi, 1
+	add ah, 1
+	cmp ah, 11
+	jne .loopforsingle
+	sub ecx, 1
+	jz .quit
+	add al, 1
+	mov ah, 1
+	jmp .loopforline
+.quit:
 	popad
 	ret
+
 
 ;;;;
 ;; input: 
@@ -559,12 +507,11 @@ drawOneCharToPlate:
 	mov edx, eax
 	mov eax, 0
 	mov al, dl
-	shl al, 5
+	shl eax, 5
 	add al, dh
 	mov byte [Plate + eax], bl
 	popad
 	ret
-
 
 clearPlate2:
 	pushad
@@ -582,6 +529,32 @@ clearPlate2:
 	mov byte [Plate + eax], 10
 	sub ecx, 1
 	jnz .loop2
+	mov al, 21
+.drawPlateBound:
+	mov ah, 11 
+	mov bl, '-'
+.drawPlateBoundLoop:
+	call drawOneCharToPlate
+	cmp ah, 0
+	je .quitDrawPlateBoundLoop
+	sub ah, 1
+	jmp .drawPlateBoundLoop
+.quitDrawPlateBoundLoop:
+	cmp al, 0
+	je .quitDrawPlateBound
+	mov al, 0
+	jmp .drawPlateBound
+.quitDrawPlateBound:
+	mov al, 21
+	mov bl, '.'
+.drawVertLine:
+	sub al, 1
+	mov ah, 0
+	call drawOneCharToPlate
+	mov ah, 11
+	call drawOneCharToPlate
+	cmp al, 1
+	jne .drawVertLine
 	popad
 	ret
 
@@ -607,17 +580,6 @@ paintPlate2:
 	mov byte [PaintCountBuffer], al
 	jmp .paintOneLine
 .quit:
-	popad
-	ret
-
-printLineBuf:
-	pushad
-	; do the real print
-	mov eax, 4
-	mov ebx, 1
-	mov ecx, LineBuf 
-	mov edx, ONELINELEN 
-	int 80h
 	popad
 	ret
 
@@ -733,17 +695,17 @@ test_move:
 	mov byte [PosY], 17
 	mov byte [PosX], 1
 .testrefresh:
-	call clearPlate
 	mov ah, byte [CurrentShape]; shape index
 	mov al, byte [CurrentRotate] ; shape rotate index
 	mov bh, byte [PosX] ; matrix x
 	mov bl, byte [PosY] ; matrix y
 	mov ecx, ShapeBuf
+	call clearPlate2
+	call drawFixedSetToPlate
 	call getShapePosition
 	mov ecx, ShapeBuf	
-	;;call addShapeToFixedSet
 	call updateShapeToPlate
-	call paintPlate
+	call paintPlate2
 	call saveCurrentPosition
 .waituserinput:
 	call updatePos ;; wait to read next position
@@ -794,56 +756,33 @@ test_move:
 
 _start:
 	nop
-	call clearTerminalScreen
+	call clearFixedSet
 	call clearPlate2
-	mov al,0
-	mov ah,30
-	mov bl,97 
-	call drawOneCharToPlate
-	mov al,1
-	mov ah,0
-	mov bl,98 
-	call drawOneCharToPlate
-	mov al,1
-	mov ah,1
-	mov bl,99 
-	call drawOneCharToPlate
-	call paintPlate2
-	jmp quit
 	;; test move procedure
 	call test_move
 	jmp quit
-	;; end of test move procedure
 
-	;; test 
-	call echo_off
-	call canonical_off
-	mov ah, 3 ; shape index
-	mov al, 0 ; shape rotate index
-	mov bl, 4 ; matrix y
-	mov bh, 4 ; matrix x
-	mov ecx, ShapeBuf
-	call getShapePosition
-	mov ax, word [ShapeBuf]
-	mov bx, word [ShapeBuf + 2]
-	mov cx, word [ShapeBuf + 4]
-	mov dx, word [ShapeBuf + 6]
-	nop
-	call clearPlate
-	mov ecx, ShapeBuf	
-	call updateShapeToPlate
-	call paintPlate
-	nop
-	;; end of test
+	call clearFixedSet
+	call clearPlate2
+	mov al, 1
+	mov ah, 1
+	mov bl, '*'
+	call drawOneCharToPlate
+	call paintPlate2
+	call drawFixedSetToPlate
+	mov al, 1
+	mov ah, 2
+	mov bl, '*'
+	call drawOneCharToPlate
+	call drawFixedSetToPlate
+	call paintPlate2
+	jmp quit
 
-	call echo_off
-	call canonical_off
-	call initPos
-refresh:
-	call updatePos 
-	call updatePlate
-	call paintPlate
-	jmp refresh
+	call clearPlate2
+	;; test move procedure
+	call test_move
+	jmp quit
+
 
 quit:
 	call echo_on
