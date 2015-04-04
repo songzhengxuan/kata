@@ -12,10 +12,13 @@ section .data
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	Shapes:
-	dw 17476,17476,17476,17476
-	dw 1632,1632,1632,1632
-	dw 56088,9792,56088,9792
-	dw 19668,17984,3648,19520
+	dw 17476,480,34952,17476
+	dw 2244,3456,35904,2244
+	dw 3264,3264,3264,3264
+	dw 1472,35008,3712,1472
+	dw 1220,2496,35968,1220
+	dw 3264,3264,3264,3264
+	dw 1472,35008,3712,1472
 
 	DebugOutput: db "------------",10
 
@@ -52,7 +55,9 @@ section .bss
 	fileHandle resb 4
 	buffer resb 4
 	CurrentShape resb 1
+	CurrentShapeBuf resb 1
 	CurrentRotate resb 1
+	CurrentRotateBuf resb 1
 
 section .text
 	global _start
@@ -146,7 +151,6 @@ updatePos:
 ;;	ecx: out buf
 getShapePosition:
 	pushad
-
 	mov edi, ecx; save the dest addr to edi
 	mov dx, ax ; first save ax
 	xor eax, eax
@@ -165,11 +169,12 @@ getShapePosition:
 	mov edx, ecx
 	and edx, 3h
 	add bh, dl
+.write:
+	mov byte [edi], bh
+	inc edi
 	mov edx, ecx
 	shr edx, 2
 	add bl, dl
-	mov byte [edi], bh
-	inc edi
 	mov byte [edi], bl
 	inc edi
 	pop bx
@@ -189,6 +194,10 @@ saveCurrentPosition:
 	mov byte [PosXBuf], al
 	mov al, byte [PosY]
 	mov byte [PosYBuf], al
+	mov al, byte [CurrentShape]
+	mov byte [CurrentShapeBuf], al
+	mov al, byte [CurrentRotate]
+	mov byte [CurrentRotateBuf], al
 	pop ax
 	ret
 
@@ -200,6 +209,10 @@ restoreCurrentPosition:
 	mov byte [PosX], al
 	mov al, byte [PosYBuf]
 	mov byte [PosY], al
+	mov al, byte [CurrentShapeBuf]
+	mov byte [CurrentShape], al
+	mov al, byte [CurrentRotateBuf]
+	mov byte [CurrentRotate], al
 	pop ax
 	ret
 
@@ -432,9 +445,11 @@ generateNewShape2:
 	int 80h
 
 	mov al, byte [buffer]
-	and al, 3
-	mov byte [CurrentShape], al
-	mov byte [CurrentRotate], 0
+	and al, 7
+	;;mov byte [CurrentShape], al
+	;;mov byte [CurrentRotate], 0
+	mov byte [CurrentShape], 3
+	mov byte [CurrentRotate], 3
 	mov byte [PosX], 4
 	mov byte [PosY], 0
 	popad
@@ -563,7 +578,7 @@ paintPlate2:
 	pushad
 	call clearTerminalScreen
 	mov eax, 0
-	mov byte [PaintCountBuffer], 24 
+	mov byte [PaintCountBuffer], 25;; should be 24, but add 1 line for debug out
 	mov al, byte [PaintCountBuffer]
 	mov edi, 0
 .paintOneLine:
@@ -719,6 +734,7 @@ test_move:
 	mov bl, byte [PosY] ; matrix y
 	mov ecx, ShapeBuf
 	call getShapePosition ;; save the new shape into ShapeBuf
+.break1:
 	call stubforbreak
 	pop ax ;; restore the move direction
 	call stubforbreak
@@ -752,38 +768,14 @@ test_move:
 .testquit:
 	popad
 	ret
-	
+
 
 _start:
 	nop
 	call clearFixedSet
 	call clearPlate2
-	;; test move procedure
 	call test_move
 	jmp quit
-
-	call clearFixedSet
-	call clearPlate2
-	mov al, 1
-	mov ah, 1
-	mov bl, '*'
-	call drawOneCharToPlate
-	call paintPlate2
-	call drawFixedSetToPlate
-	mov al, 1
-	mov ah, 2
-	mov bl, '*'
-	call drawOneCharToPlate
-	call drawFixedSetToPlate
-	call paintPlate2
-	jmp quit
-
-	call clearPlate2
-	;; test move procedure
-	call test_move
-	jmp quit
-
-
 quit:
 	call echo_on
 	call canonical_on
