@@ -95,7 +95,7 @@ updatePos:
 	add al, 1
 	mov byte [timer_expire_count], al
 .debugPrint2:
-	cmp al, 6 
+	cmp al, 12 ;; this is the sinme time tick number 
 	jne .aTimerNotExpire
 	mov byte [timer_expire_count], 0
 	jmp .incY
