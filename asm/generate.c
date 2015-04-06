@@ -83,10 +83,12 @@ int main(int argc, char **argv) {
 	int i = 0;
 	int buf[16];
 	int buf2[16];
+	int buf3[16];
 	for (i = 0; i < 5; ++i) {
 		rotateShape(buf, base[i]);
 		rotateShape(buf2, buf);
-		printf("dw %d,%d,%d,%d\n", shapeToNumber(base[i]), shapeToNumber(buf), shapeToNumber(buf2), shapeToNumber(base[i]));
+		rotateShape(buf3, buf2);
+		printf("dw %d,%d,%d,%d,%d\n", shapeToNumber(base[i]), shapeToNumber(buf), shapeToNumber(buf2), shapeToNumber(buf3), shapeToNumber(base[i]));
 	}
 	return 0;
 }

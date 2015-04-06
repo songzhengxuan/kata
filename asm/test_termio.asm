@@ -12,14 +12,14 @@ section .data
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	Shapes:
-	dw 17476,3840,8738,17476
-	dw 17952,864,1122,17952
+	dw 17476,3840,8738,240
+	dw 17952,864,1122,1728
 	dw 1632,1632,1632,1632
-	dw 1856,1570,736,1856
-	dw 17984,1824,610,17984
-	dw 17476,3840,8738,17476
-	dw 17952,864,1122,17952
-	dw 1856,1570,736,1856
+	dw 1856,1570,736,17504
+	dw 17984,1824,610,1248
+	dw 17984,1824,610,1248
+	dw 1632,1632,1632,1632
+	dw 1856,1570,736,17504
 
 	DebugOutput: db "------------",10
 
@@ -459,7 +459,7 @@ generateNewShape2:
 	mov byte [CurrentShape], al
 	mov byte [CurrentRotate], 0
 	;; following 2 lines are debug code
-	;;mov byte [CurrentShape], 0
+	;;mov byte [CurrentShape], 3
 	;;mov byte [CurrentRotate], 0
 
 	mov byte [PosX], 4
