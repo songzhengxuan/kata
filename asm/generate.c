@@ -61,7 +61,7 @@ void rotateShape(int outShape[], int inShape[]) {
 	int i,j;
 	for (i = 0; i < 4; ++i) {
 		for (j = 0; j < 4; ++j) {
-			outShape[4*j + (3-i)] = inShape[4*i+j];
+			outShape[4*i + (3-j)] = inShape[4*j+i];
 		}
 	}
 }
@@ -69,9 +69,9 @@ void rotateShape(int outShape[], int inShape[]) {
 int shapeToNumber(int shape[]) {
 	int i = 0;
 	int result = 0;
-	int f = 1;
+	int f = (1<<16);
 	for (i = 0; i < 16; ++i) {
-		f = (f<<1);
+		f = (f>>1);
 		if (shape[i] == 1) {
 			result |= f;
 		}

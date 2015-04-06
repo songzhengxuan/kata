@@ -12,13 +12,13 @@ section .data
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	Shapes:
-	dw 17476,480,34952,17476
-	dw 2244,3456,35904,2244
-	dw 3264,3264,3264,3264
-	dw 1472,35008,3712,1472
-	dw 1220,2496,35968,1220
-	dw 3264,3264,3264,3264
-	dw 1472,35008,3712,1472
+	dw 17476,3840,8738,17476
+	dw 17952,864,1122,17952
+	dw 1632,1632,1632,1632
+	dw 1856,1570,736,1856
+	dw 17984,1824,610,17984
+	dw 17476,3840,8738,17476
+	dw 17952,864,1122,17952
 
 	DebugOutput: db "------------",10
 
@@ -169,7 +169,7 @@ getShapePosition:
 	mov edx, ecx
 	and edx, 3h
 	add bh, dl
-.write:
+.debugwrite:
 	mov byte [edi], bh
 	inc edi
 	mov edx, ecx
@@ -182,7 +182,7 @@ getShapePosition:
 	inc ecx
 	cmp ecx, 16
 	jb .checkOneBit
-
+.debuggetshapeout:
 	popad
 	ret
 
@@ -446,10 +446,13 @@ generateNewShape2:
 
 	mov al, byte [buffer]
 	and al, 7
+	;; following 2 lines are real code
 	;;mov byte [CurrentShape], al
 	;;mov byte [CurrentRotate], 0
-	mov byte [CurrentShape], 3
-	mov byte [CurrentRotate], 3
+	;; following 2 lines are debug code
+	mov byte [CurrentShape], 6
+	mov byte [CurrentRotate], 0
+
 	mov byte [PosX], 4
 	mov byte [PosY], 0
 	popad
