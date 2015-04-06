@@ -112,6 +112,8 @@ updatePos:
 	je .decX
 	cmp al, 'd'
 	je .incX
+	cmp al, 'j'
+	je .rotate
 	jmp .endUpdatePos
 .incX:
 	mov al, byte [PosX]
@@ -136,6 +138,12 @@ updatePos:
 	sub al, 1
 	mov byte [PosY], al
 	mov al, 0
+	jmp .endUpdatePos
+.rotate:
+	mov al, byte [CurrentRotate]
+	add al, 1
+	and al, 3
+	mov byte [CurrentRotate], al
 	jmp .endUpdatePos
 .endUpdatePos:
 	pop edx
