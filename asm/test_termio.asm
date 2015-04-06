@@ -19,6 +19,7 @@ section .data
 	dw 17984,1824,610,17984
 	dw 17476,3840,8738,17476
 	dw 17952,864,1122,17952
+	dw 1856,1570,736,1856
 
 	DebugOutput: db "------------",10
 
@@ -447,11 +448,11 @@ generateNewShape2:
 	mov al, byte [buffer]
 	and al, 7
 	;; following 2 lines are real code
-	;;mov byte [CurrentShape], al
-	;;mov byte [CurrentRotate], 0
-	;; following 2 lines are debug code
-	mov byte [CurrentShape], 6
+	mov byte [CurrentShape], al
 	mov byte [CurrentRotate], 0
+	;; following 2 lines are debug code
+	;;mov byte [CurrentShape], 0
+	;;mov byte [CurrentRotate], 0
 
 	mov byte [PosX], 4
 	mov byte [PosY], 0
