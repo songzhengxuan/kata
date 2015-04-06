@@ -50,7 +50,7 @@ section .bss
 	PosY resb 1
 	PosXBuf resb 1
 	PosYBuf resb 1
-	UserInput resb 1
+	UserInput resb 1024
 	LastMoveDirection resb 1
 	ShapeBuf resb 16
 	fileHandle resb 4
@@ -86,7 +86,7 @@ updatePos:
 	mov eax, 3
 	mov ebx, 0
 	mov ecx, UserInput
-	mov edx, 1
+	mov edx, 1024
 	int 80h
 	cmp eax, 0
 	jne .newinput
