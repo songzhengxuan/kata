@@ -1,7 +1,7 @@
 include ../Make.defines
 
-PROGS =	daytimetcpcli daytimetcpsrv2 mycat openfile \
-	tfcred01 unixbind unixstrcli01 unixstrserv01 unixstrserv02
+PROGS =	myunixstrserv01 myunixstrcli01 unixstrcli01 unixstrserv01 ytimetcpcli daytimetcpsrv2 mycat openfile \
+	tfcred01 unixbind unixstrserv02
 
 all:	${PROGS}
 
@@ -28,6 +28,12 @@ unixdgcli01:	unixdgcli01.o
 
 unixdgserv01:	unixdgserv01.o
 		${CC} ${CFLAGS} -o $@ unixdgserv01.o ${LIBS}
+
+myunixstrcli01:	myunixstrcli01.o
+		${CC} ${CFLAGS} -o $@ myunixstrcli01.o ${LIBS}
+
+myunixstrserv01:	myunixstrserv01.o sigchldwaitpid.o
+		${CC} ${CFLAGS} -o $@ myunixstrserv01.o sigchldwaitpid.o ${LIBS}
 
 unixstrcli01:	unixstrcli01.o
 		${CC} ${CFLAGS} -o $@ unixstrcli01.o ${LIBS}

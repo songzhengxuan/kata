@@ -5,6 +5,8 @@ section .data
 	EndLine db "------------",10
 	ONELINELEN equ $-EndLine
 	MiddleLine db "1----------1",10
+	ScoreStr db "Score:", 0
+	SCORESTRLEN equ $-ScoreStr
 	PlateHeight equ 24
 	PlateWidth equ 32
 	NEWONELINELEN equ 32
@@ -643,6 +645,23 @@ paintPlate2:
 	popad
 	ret
 
+;;;;;;
+drawScoreToPlate:
+	pushad
+	mov ax, word [Score]
+	mov ecx, DebugOutBuf
+	call convertNumberTodecimal
+	mov al, 8
+	mov ah, 14
+	call drawTextToPlate
+	mov ecx, ScoreStr
+	mov edx, SCORESTRLEN
+	mov al, 7
+	mov ah, 13
+	call drawTextToPlate
+	popad
+	
+
 ;; convert a digit to null terminated decimal string(must be in 16bit bucket)
 ;; in:
 ;;		ax: input number
@@ -816,16 +835,7 @@ test_move:
 	call getShapePosition
 	mov ecx, ShapeBuf	
 	call updateShapeToPlate
-
-	push eax
-	push ecx
-	mov ax, word [Score]
-	mov ecx, DebugOutBuf
-	call convertNumberTodecimal
-	mov al, 1
-	mov ah, 1
-.testbreak:
-	call drawTextToPlate
+	call drawScoreToPlate
 	pop eax
 	pop ecx
 
