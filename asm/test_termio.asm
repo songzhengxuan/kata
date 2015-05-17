@@ -61,7 +61,7 @@ section .bss
 	CurrentShapeBuf resb 1
 	CurrentRotate resb 1
 	CurrentRotateBuf resb 1
-	Score resb 4
+	Score resb 2
 	DebugOutBuf resb 64
 
 section .text
@@ -429,6 +429,8 @@ clearAllFullLine:
 	jne .continue
 	mov al, cl
 	call clearLine
+	push ax
+	pop ax
 	mov ax, word [Score]
 	add ax, 1
 	mov word [Score], ax
@@ -646,9 +648,14 @@ paintPlate2:
 ;;		ax: input number
 ;; 		ecx: the buffer to hold the string
 ;; out:
-;;		ecx: the length of result string
+;;		edx: the length of result string
 convertNumberTodecimal:
-	pushad
+	push eax
+	push ebx
+	push ecx
+	push esi
+	push edi
+
 	mov edi, 0
 	mov bx, 10
 .loop:
@@ -661,9 +668,11 @@ convertNumberTodecimal:
 	add edi, 1
 	jmp .loop
 .quit1:
+	add al, 48
 	mov byte [ecx + edi], al
 	add edi, 1
 	mov byte [ecx + edi], 0
+	mov edx, edi
 	;; need revert the string stored in ecx
 	sub edi, 1
 	mov esi, 0 
@@ -678,8 +687,11 @@ convertNumberTodecimal:
 	sub edi, 1
 	jmp .swaploop
 .quit2:
-	mov ecx, edi 
-	popad
+	pop edi
+	pop esi
+	pop ecx
+	pop ebx
+	pop eax
 	
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -804,7 +816,21 @@ test_move:
 	call getShapePosition
 	mov ecx, ShapeBuf	
 	call updateShapeToPlate
+
+	push eax
+	push ecx
+	mov ax, word [Score]
+	mov ecx, DebugOutBuf
+	call convertNumberTodecimal
+	mov al, 1
+	mov ah, 1
+.testbreak:
+	call drawTextToPlate
+	pop eax
+	pop ecx
+
 	call paintPlate2
+
 	call saveCurrentPosition
 .waituserinput:
 	call updatePos ;; wait to read next position
@@ -854,13 +880,7 @@ test_move:
 
 _start:
 	nop
-
-	mov ax, 123 
-	mov ecx, DebugOutBuf 
-	call convertNumberTodecimal
-.break:
-	jmp quit
-
+	mov word [Score], 123
 	call clearFixedSet
 	call clearPlate2
 	call test_move
