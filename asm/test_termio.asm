@@ -8,6 +8,8 @@ section .data
 	PlateHeight equ 24
 	PlateWidth equ 32
 	NEWONELINELEN equ 32
+	SCORE db "score:"
+	SCORELEN equ $-SCORE
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;; shapes
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,13 +22,13 @@ section .data
 	dw 17984,1824,610,1248
 	dw 1632,1632,1632,1632
 	dw 1856,1570,736,17504
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	;; end of shapes
+	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 	DebugOutput: db "------------",10
 
 
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	;; end of shapes
-	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	;;;;;  termial control 
@@ -59,6 +61,8 @@ section .bss
 	CurrentShapeBuf resb 1
 	CurrentRotate resb 1
 	CurrentRotateBuf resb 1
+	Score resb 4
+	DebugOutBuf resb 64
 
 section .text
 	global _start
@@ -425,6 +429,9 @@ clearAllFullLine:
 	jne .continue
 	mov al, cl
 	call clearLine
+	mov ax, word [Score]
+	add ax, 1
+	mov word [Score], ax
 	add cl, 1
 .continue:
 	cmp cl, 0
@@ -497,6 +504,30 @@ updateShapeToPlate:
 	inc edx
 	cmp edx, 4
 	jne .updateOneShapePos
+	popad
+	ret
+
+; drawTextToPlate:
+;; params 
+;;		ah the x of output pos
+;;		al the y of output pos
+;;		ecx	the output string str
+;; 		edx the count of ouput text
+drawTextToPlate:
+	pushad
+	mov ebx, 0
+	mov esi, ecx
+.drawOneChar:
+	push bx
+	mov bl, byte [esi]
+	call drawOneCharToPlate
+	pop bx
+	add ah, 1
+	add esi, 1
+	add ebx, 1
+	cmp ebx, edx 
+	jne .drawOneChar
+.break:
 	popad
 	ret
 
@@ -609,6 +640,47 @@ paintPlate2:
 .quit:
 	popad
 	ret
+
+;; convert a digit to null terminated decimal string(must be in 16bit bucket)
+;; in:
+;;		ax: input number
+;; 		ecx: the buffer to hold the string
+;; out:
+;;		ecx: the length of result string
+convertNumberTodecimal:
+	pushad
+	mov edi, 0
+	mov bx, 10
+.loop:
+	cmp ax, 10 
+	jb .quit1
+	mov dx, 0
+	div bx 
+	add dl, 48
+	mov byte [ecx + edi], dl
+	add edi, 1
+	jmp .loop
+.quit1:
+	mov byte [ecx + edi], al
+	add edi, 1
+	mov byte [ecx + edi], 0
+	;; need revert the string stored in ecx
+	sub edi, 1
+	mov esi, 0 
+.swaploop:
+	cmp esi, edi
+	jae .quit2
+	mov al, byte [ecx + esi]
+	mov ah, byte [ecx + edi]
+	mov byte [ecx + edi], al
+	mov byte [ecx + esi], ah
+	add esi, 1
+	sub edi, 1
+	jmp .swaploop
+.quit2:
+	mov ecx, edi 
+	popad
+	
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; terminal control procedure
@@ -773,8 +845,6 @@ test_move:
 	call getShapePosition ;; save the new shape into ShapeBuf
 	call addShapeToFixedSet
 	call clearAllFullLine
-	;; begin of test code
-	;; end of test code
 	call generateNewShape2
 	jmp .testrefresh
 .testquit:
@@ -784,6 +854,13 @@ test_move:
 
 _start:
 	nop
+
+	mov ax, 123 
+	mov ecx, DebugOutBuf 
+	call convertNumberTodecimal
+.break:
+	jmp quit
+
 	call clearFixedSet
 	call clearPlate2
 	call test_move

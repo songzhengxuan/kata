@@ -1,6 +1,12 @@
 test_term: test_termio.asm
 	nasm -f elf32 -g -o test_termio.o test_termio.asm
 	ld -m elf_i386 -o test_termio test_termio.o
+libcsandbox: libcsandbox.asm
+	nasm -f elf32 -g -F stabs -o libcsandbox.o libcsandbox.asm
+	gcc -m32 libcsandbox.o -o libcsandbox
+test_term_bak: test_termio.asm
+	nasm -f elf32 -g -o test_termio_bak.o test_termio_bak.asm
+	ld -m elf_i386 -o test_termio test_termio_bak.o
 russia: russia.asm
 	nasm -f elf32 -g -o russia.o russia.asm
 	ld -m elf_i386 -o russia.exe russia.o
