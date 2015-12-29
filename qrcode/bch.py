@@ -41,6 +41,11 @@ def cl_mus(x, y):
 		i += 1
 	return z
 
+def gf_mult_noLUT2(x, y, prim=0, filed_charac_full=256, carryless=True):
+	print 'haha'
+	r = 0
+	return r
+
 def gf_mult_noLUT(x, y, prim=0):
 	'''Multiplication in Galois Fields without using a precomputed look-up table 
 	(and thus it's slower) 
