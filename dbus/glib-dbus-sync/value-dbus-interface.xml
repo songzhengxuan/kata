@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE node PUBLIC
+  "-//freedesktop//DTD D-Bus Object Introspection 1.0//EN"
+  "http://standards.freedesktop.org/dbus/1.0/introspect.dtd">
+ 
+ <node>
+   <interface name="org.maemo.Value">
+   
+   <method name="getvalue1">
+      <arg type="i" name="cur_value" direction="out"/>
+   </method>
+   <method name="getvalue2">
+      <arg type="d" name="cur_value" direction="out"/>
+   </method>
+   <method name="setvalue1">
+      <arg type="i" name="new_value" direction="in"/>
+   </method>
+   <method name="setvalue2">
+      <arg type="d" name="new_value" direction="in"/>
+   </method>
+
+   <signal name="changed_value1">
+    <arg type="s" name="change_source_name" direction="out"/>
+   </signal>
+
+   <signal name="changed_value2">
+    <arg type="s" name="change_source_name" direction="out"/>
+   </signal>
+
+   <signal name="outofrange_value1">
+    <arg type="s" name="outofrange_source_name" direction="out"/>
+   </signal>
+
+   <signal name="outofrange_value2">
+    <arg type="s" name="outofrange_source_name" direction="out"/>
+   </signal>
+
+   </interface>
+ </node>
