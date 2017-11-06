@@ -17,12 +17,36 @@ class Point(object):
         self.x = x
         self.y = y
         self.color = color
+        self.edges = None
 
     def draw(self, draw):
         draw.ellipse((self.x - Point.__radius, self.y - Point.__radius) + (self.x + Point.__radius, self.y + Point.__radius), ColorTable[self.color])
     
     def reset(self):
         self.color = 0
+    
+    def addEdge(self, edge):
+        if self.edges is None:
+            self.edges = edge
+            edge.next = None
+        else:
+            edge.next = self.edges
+            self.edges = edge
+
+    def isConnectedTo(self, otherPoint):
+        e = self.edges
+        while e is not None:
+            if e.end == otherPoint:
+                return True
+            e = e.next
+        return False
+
+class Edge(object):
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+        self.next = None
+
 
 class Map(object):
     def __init__(self):
@@ -33,11 +57,17 @@ class Map(object):
         for p in self.points:
             p.draw(imageDraw)
         for e in self.edges:
-            start, end = e
+            start, end = e.start, e.end
             imageDraw.line((start.x, start.y) + (end.x, end.y), fill=128)
 
     def connect(self, p1, p2):
-        self.edges.append((p1, p2))
+        edge1 = Edge(p1, p2)
+        p1.addEdge(edge1)
+        edge2 = Edge(p2, p1)
+        p2.addEdge(edge2)
+        self.edges.append(edge1)
+        self.edges.append(edge2)
+        return edge1, edge2
 
     def reset(self):
         for p in self.points:
@@ -60,10 +90,10 @@ def generateRandomMap(width, height, N):
                     continue
                 p2 = result.points[j]
                 valid = True
-                if (p1, p2) in result.edges or (p2, p1) in result.edges:
+                if p1.isConnectedTo(p2):
                     continue
                 for e in result.edges:
-                    e1, e2 = e
+                    e1, e2 = e.start, e.end
                     if intersect(p1, p2, e1, e2):
                         valid = False
                         break
@@ -73,8 +103,8 @@ def generateRandomMap(width, height, N):
                         nearest_point = p2
                         
             if nearest_point != None:
+                result.connect(p1, nearest_point)
                 added = True
-                result.edges.append((p1, nearest_point))
 
         if not added:
             break
@@ -102,14 +132,14 @@ def minConflict(map, maxColorCount, maxLoop):
         # find a random points in un-assgined points set
         randomPoint = unassignedPoints.pop()
         conflictCount = { color : 0 for color in range(1, maxColorCount+1)}
-        for edge in map.edges:
-            h, t = edge
-            if h == randomPoint:
-                if t.color != 0:
-                    conflictCount[t.color] += 1
-            elif t == randomPoint:
-                if h.color != 0:
-                    conflictCount[h.color] += 1
+        
+        edge_to_check = randomPoint.edges
+        while edge_to_check is not None:
+            connect_point = edge_to_check.end
+            if connect_point.color != 0:
+                conflictCount[connect_point.color] += 1
+            edge_to_check = edge_to_check.next
+
         minConfilitCount = sys.maxint 
         minConflictColor = 0
         for color, conflict in conflictCount.items():
@@ -121,7 +151,7 @@ def minConflict(map, maxColorCount, maxLoop):
 
 def isValidMap(map):
     for e in map.edges:
-        h, t = e
+        h, t = e.start, e.end
         if h.color != 0 and t.color != 0 and h.color != t.color:
             continue
         else:
@@ -132,7 +162,7 @@ def main():
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
-    m = generateRandomMap(400, 400, 6)
+    m = generateRandomMap(400, 400, 12)
     print(isValidMap(m))
     minConflict(m, 4, 1000)
     print(isValidMap(m))
