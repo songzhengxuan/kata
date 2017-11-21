@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw
 from random import randint
 import math
 import sys
+import time
 
 ColorTable = {}
 ColorTable[0] = (255, 0, 0) 
@@ -10,6 +11,13 @@ ColorTable[2] = (0, 0, 255)
 ColorTable[3] = (0, 0, 0) 
 ColorTable[4] = (255, 255, 0) 
 
+def meaure_time(func):
+    def wrapper(*args, **kargs):
+        start = time.clock()
+        func(*args, **kargs)
+        end = time.clock();
+        print "%s take %f" % (func.__name__, (end - start))
+    return wrapper
 
 class Point(object):
     __radius = 4
@@ -121,6 +129,7 @@ def line_length(p1, p2):
 def intersect(A,B,C,D):
     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
+@meaure_time
 def minConflict(map, maxColorCount, maxLoop):
     unassignedPoints = {}
     for i in range(maxLoop):
@@ -158,11 +167,50 @@ def isValidMap(map):
             return False
     return True
 
+
+class csp(object):
+    def __init__(self):
+        self.assignment_is_complete = None
+        self.select_unassigned_variable = None
+        self.isConsistant = None
+        self.inference = None
+
+def backtracking_search(csp):
+    return backtrack({}, csp)
+
+def backtrack(assignment, csp):
+    if csp.assignment_is_complete(csp, assignment):
+        return True, assignment
+    var = csp.select_unassigned_variable(csp)
+    for value in csp.order_domain_values(var, assignment, csp):
+        if csp.isConsistant(csp, assignment, var, value):
+            assignment[var] = value
+            inference_result, inferences = csp.inference(csp, var, value)
+            if inference_result is not False:
+                assignment.update(inferences)
+                recursive_result, recursive_assignment = backtrack(assignment, csp)
+                if recursive_result is not False:
+                    return True, recursive_assignment
+            assignment.pop(var)
+            for k in inferences.items():
+                assignment.pop(k)
+    return False, None
+                
+
+@meaure_time
+def test(name, age):
+    for i in range(20000000):
+        i = i+1
+    print "hello %s, you are %d years old" % (name, age)
+
+def main2():
+    test('Tom', 3)
+
 def main():
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
-    m = generateRandomMap(400, 400, 12)
+    m = generateRandomMap(400, 400, 64)
     print(isValidMap(m))
     minConflict(m, 4, 1000)
     print(isValidMap(m))
