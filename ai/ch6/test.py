@@ -158,6 +158,49 @@ def minConflict(map, maxColorCount, maxLoop):
         randomPoint.color = minConflictColor
     # end of for max loop
 
+def backtracking(csp):
+    return backtrack({}, config)
+
+def backtrack(assignment, csp):
+    if csp['assignmentIsComplete'](csp, assignment):
+        return True, assignment
+
+    var = csp['selectUnassignentVariable'](csp, assignment)
+
+    assignmentSet = csp['orderDomainValue'](csp, var)
+    for value in assignmentSet:
+        if (csp['valueIsConsistentWith'](csp, var, value, assignment)):
+            assignment[var] = value
+            inferenceResult, inference = csp['inference'](csp, var, value, assignment)
+            if inferenceResult is not False:
+                assignment.update(inference)
+                result, recursiveAssignment = backtrack(assignment, csp)
+                if result is not False:
+                    return recursiveAssignment
+            else:
+                assignment = {k:v for k,v in assignment.items() if k not in inference}
+                assignment.pop(var)
+    
+    return False, {}
+
+def getCSPFromMap(map):
+    csp = {}
+    csp['__map'] = map
+
+    def assignmentIsComplete(csp, assignment):
+        map = csp['__map']
+        if (len(assignment) != len(map.points)):
+            return False
+        for p in map.points:
+            if p not in assignment:
+                return False
+        return True
+
+    csp['assignmentIsComplete'] =  assignmentIsComplete
+
+    return csp
+
+
 def isValidMap(map):
     for e in map.edges:
         h, t = e.start, e.end
@@ -217,5 +260,15 @@ def main():
     m.draw(draw)
     im.show()
 
+def test():
+    m = generateRandomMap(400, 400, 4)
+    csp = getCSPFromMap(m)
+    assgiment = {}
+    for p in m.points:
+        assgiment[p] = 1
+    result = csp['assignmentIsComplete'](csp, assgiment)
+    print(result)
+
 if __name__ == '__main__':
-    main()
+    #main()
+    test()
