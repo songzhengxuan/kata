@@ -1,20 +1,19 @@
 '''
-Simple backtracking without inference or any other fancy thing
+backtracking with inference
 '''
 def backtracking_search(csp):
-    '''returns a solution, or failure
+    ''' returns a solution, or failure
     :param csp: the problem
     '''
     result = {}
-    found = backtrack(csp, result) #initial assignment is empty
+    found = backtrack(csp, result)
     return found, result
-
 
 def backtrack(csp, assignment):
     ''' private method for backtracking search,
-    returns  True or False
+    returns True or False
     :param csp: the problem
-    :param assignment: curent no-conflicit assignment of csp
+    :param assignment: current assignment of csp
     '''
     if csp.is_assignment_complete(assignment):
         return True
@@ -23,9 +22,10 @@ def backtrack(csp, assignment):
     for value in ordered_domain_value:
         if csp.is_consistant_with(var, value, assignment):
             assignment[var] = value
-            result = backtrack(csp, assignment)
-            if result:
-                return True
+            inference_succeed, inference_results = csp.inference(var, value)
+            if inference_succeed is True:
+                assignment.update(inference_results)
+                return backtrack(csp, assignment)
             else:
                 del assignment[var]
     return False

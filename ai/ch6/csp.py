@@ -33,3 +33,16 @@ class CSP(object):
         :param assignment:
         '''
         pass
+
+    def inference(self, var, value):#pylint: disable=unused-argument
+        ''' virtual method
+        return (True, decided var_value map during inference) andif inferences var=value is valid, otherwise return false
+        ** hidden variables: 
+            assignment: current assigned vars and their values
+            [var, domain] map: domains for each unassigned variabl
+         **
+        :param var: target var
+        :param value: value for target value
+        :param assignment: target assignment
+        '''
+        return True, {}
