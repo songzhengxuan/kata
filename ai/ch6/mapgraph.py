@@ -6,10 +6,10 @@ import math
 from random import randint
 
 ColorTable = {}
-ColorTable[0] = (255, 0, 0) 
+ColorTable[0] = (0, 0, 0) 
 ColorTable[1] = (0, 255, 0) 
 ColorTable[2] = (0, 0, 255) 
-ColorTable[3] = (0, 0, 0) 
+ColorTable[3] = (255, 0, 0) 
 ColorTable[4] = (255, 255, 0)
 
 class Point(object):

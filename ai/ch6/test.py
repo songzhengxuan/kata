@@ -5,6 +5,8 @@ import sys
 import time
 from mapgraph import Map
 import mapgraph
+from mapcolor import MapColor
+import InferenceBacktracking
 
 def meaure_time(func):
     def wrapper(*args, **kargs):
@@ -43,11 +45,11 @@ def minConflict(map, maxColorCount, maxLoop):
         randomPoint.color = minConflictColor
     # end of for max loop
 
-def isValidMap(map):
+def isValidMap(_map):
     '''
     判断是不是所有的点都已经上色，而且符合不冲突的条件
     '''
-    for e in map.edges:
+    for e in _map.edges:
         h, t = e.start, e.end
         if h.color != 0 and t.color != 0 and h.color != t.color:
             continue
@@ -55,13 +57,21 @@ def isValidMap(map):
             return False
     return True
 
+def solve_use_forward_checking(_map):
+    solver = MapColor(_map, 4)
+    InferenceBacktracking.backtracking_search(solver)
+
 def main():
+    '''
+    main func
+    '''
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
     m = mapgraph.generateRandomMap(400, 400, 64)
     print(isValidMap(m))
-    minConflict(m, 4, 1000)
+    #minConflict(m, 4, 1000)
+    solve_use_forward_checking(m)
     print(isValidMap(m))
     m.draw(draw)
     im.show()
