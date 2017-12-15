@@ -57,8 +57,9 @@ def isValidMap(_map):
             return False
     return True
 
-def solve_use_forward_checking(_map):
-    solver = MapColor(_map, 4)
+@meaure_time
+def solve_use_forward_checking(_map, color_number):
+    solver = MapColor(_map, color_number)
     InferenceBacktracking.backtracking_search(solver)
 
 def main():
@@ -68,10 +69,11 @@ def main():
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
-    m = mapgraph.generateRandomMap(400, 400, 3)
+    m = mapgraph.generateRandomMap(400, 400, 120)
     print(isValidMap(m))
-    #minConflict(m, 4, 1000)
-    solve_use_forward_checking(m)
+    minConflict(m, 3, 1000)
+    print(isValidMap(m))
+    solve_use_forward_checking(m, 3)
     print(isValidMap(m))
     m.draw(draw)
     im.show()
