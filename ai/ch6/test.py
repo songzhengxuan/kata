@@ -68,7 +68,7 @@ def main():
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
-    m = mapgraph.generateRandomMap(400, 400, 64)
+    m = mapgraph.generateRandomMap(400, 400, 3)
     print(isValidMap(m))
     #minConflict(m, 4, 1000)
     solve_use_forward_checking(m)

@@ -49,11 +49,11 @@ class MapColor(CSP):
 
     def is_consistant_with(self, var, value, assignment):
         '''
-        判断var对应的点赋色彩value时，是否与现有assignment能够不冲突
+        判断如果将var对应的点赋色彩value，是否与现有assignment能够不冲突
         '''
         edge = var.edges
         while edge is not None:
-            if edge.end.color != 0 and var.color == edge.end.color:
+            if edge.end.color != 0 and value == edge.end.color:
                 return False
             edge = edge.next
         return True
@@ -62,7 +62,8 @@ class MapColor(CSP):
         '''
         对new_assignment中各个点按new_assignment的值进行上色
         '''
-        for key, _ in new_assignment.items():
+        for key, color in new_assignment.items():
+            key.color = color
             self.__unassigned_points.remove(key)
     
     def undo_assign(self, new_assignment):
@@ -71,6 +72,7 @@ class MapColor(CSP):
         各个变量
         '''
         for key, _ in new_assignment.items():
+            key.color = 0
             self.__domain_values[key] = self.__default_domain_values[key]
             self.__unassigned_points.add(key)
     
