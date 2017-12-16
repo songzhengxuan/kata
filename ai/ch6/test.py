@@ -6,6 +6,7 @@ import time
 from mapgraph import Map
 import mapgraph
 from mapcolor import MapColor
+from mapcolormac import MapColorMac
 import InferenceBacktracking
 
 def meaure_time(func):
@@ -62,6 +63,11 @@ def solve_use_forward_checking(_map, color_number):
     solver = MapColor(_map, color_number)
     InferenceBacktracking.backtracking_search(solver)
 
+@meaure_time
+def solve_use_mac(_map, color_number):
+    solver = MapColorMac(_map, color_number)
+    InferenceBacktracking.backtracking_search(solver)
+
 def main():
     '''
     main func
@@ -69,12 +75,15 @@ def main():
     im = Image.new('RGBA', (400, 400), (255, 255, 255, 0))
     draw = ImageDraw.Draw(im)
     #draw.line((0, 0) + im.size, fill=128)
-    m = mapgraph.generateRandomMap(400, 400, 120)
+    m = mapgraph.generateRandomMap(400, 400, 60)
     print(isValidMap(m))
     minConflict(m, 3, 1000)
     print(isValidMap(m))
     solve_use_forward_checking(m, 3)
     print(isValidMap(m))
+    solve_use_mac(m, 3)
+    print(isValidMap(m))
+
     m.draw(draw)
     im.show()
 
