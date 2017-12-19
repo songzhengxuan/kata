@@ -2,4 +2,5 @@
 int main(int argc, char **argv) {
 	char *p = (char*) 0x1234;
 	*p = 'a';
+	return 0
 }
