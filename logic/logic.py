@@ -55,5 +55,20 @@ def pl_true(exp, model={}):
             if p is None:
                 result = None
         return result
-
-    pass
+    p, q = args
+    if op == '==>':
+        return pl_true(~p | q, model)
+    elif op == '<==':
+        return pl_true(p | ~q, model)
+    pt = pl_true(p, model)
+    if pt is None:
+        return None
+    qt = pl_true(q, model)
+    if qt is None:
+        return None
+    if op == '<=>':
+        return pt == qt
+    elif op == '^':
+        return pt != qt
+    else:
+        raise ValueError("illegal operator in logic expression" + str(exp))

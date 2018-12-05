@@ -1,4 +1,6 @@
 from utils import Expr
+import utils
+import logic
 
 
 def test(a, b, **c):
@@ -9,8 +11,9 @@ def test(a, b, **c):
 
 
 def main():
-    a = Expr('|', "hello", "world")
-    print(a)
+    a = utils.expr('A')
+    A = Expr('A')
+    print(logic.pl_true(a, {A: True}))
 
 
 if __name__ == "__main__":
