@@ -1,3 +1,38 @@
+from utils import first
+
+
+class KB:
+
+    """A knowledge base to which you can tell and ask sentences.
+    To create a KB, first subclass this class and implement
+    tell, ask_generator, and retract.  Why ask_generator instead of ask?
+    The book is a bit vague on what ask means --
+    For a Propositional Logic KB, ask(P & Q) returns True or False, but for an
+    FOL KB, something like ask(Brother(x, y)) might return many substitutions
+    such as {x: Cain, y: Abel}, {x: Abel, y: Cain}, {x: George, y: Jeb}, etc.
+    So ask_generator generates these one at a time, and ask either returns the
+    first one or returns False."""
+
+    def __init__(self, sentence=None):
+        raise NotImplementedError
+
+    def tell(self, sentence):
+        """Add the sentence to the KB"""
+        raise NotImplementedError
+
+    def ask(self, query):
+        """Return a substitution that makes the query true, or, failing that, return False."""
+        return first(self.ask_generator(query), default=False)
+
+    def ask_generator(self, query):
+        """Yield all the substitutions that make query true."""
+        raise NotImplementedError
+
+    def retract(self, sentence):
+        """remove sentence from the KB."""
+        raise NotImplementedError
+
+
 def is_symbol(s):
     """A string s is a symbol if it starts with an aplphabetic char.
     >>> is_symbol('R2D2')

@@ -1,6 +1,15 @@
 import collections
 import collections.abc
 
+def first(iterable, default=None):
+    """return the firt element of an iterable or the next element of a generator; or default"""
+    try:
+        return iterable[0]
+    except IndexError:
+        return default
+    except TypeError:
+        return next(iterable, default)
+
 
 class Expr(object):
     def __init__(self, op, *args):
