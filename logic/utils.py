@@ -1,5 +1,7 @@
 import collections
 import collections.abc
+import math
+
 
 def first(iterable, default=None):
     """return the firt element of an iterable or the next element of a generator; or default"""
@@ -202,6 +204,7 @@ def expr(x):
 
 infix_ops = '==> <== <=>'.split()
 
+
 def expr_handle_infix_ops(x):
     """Given a str , return a new str with ==> replaced by |'==>'|, etc.
     >>> expr_handle_infix_ops('p ==> Q')
@@ -221,3 +224,33 @@ class defaultkeydict(collections.defaultdict):
     def __missing__(self, key):
         self[key] = result = self.default_factory(key)
         return result
+
+
+orientations = EAST, NORTH, WEST, SOUTH = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+turns = LEFT, RIGHT = (+1, -1)
+
+
+def turn_heading(heading, inc, headings=orientations):
+    return headings[(headings.index(heading) + inc) % len(headings)]
+
+
+def turn_right(heading):
+    return turn_heading(heading, RIGHT)
+
+
+def turn_left(heading):
+    return turn_heading(heading, LEFT)
+
+
+def distance(a, b):
+    """The distance between two (x, y) points."""
+    xA, yA = a
+    xB, yB = b
+    return math.hypot((xA - xB), (yA - yB))
+
+
+def distance_squared(a, b):
+    """The square of the distance between two(x,y) points."""
+    xA, yA = a
+    xB, yB = b
+    return (xA - xB) ** 2 + (yA - yB) ** 2

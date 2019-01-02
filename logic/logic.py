@@ -33,6 +33,19 @@ class KB:
         raise NotImplementedError
 
 
+class PropKB(KB):
+    """A KB for propositional logic. Inefficinent, with no indexing. """
+
+    def __init__(self, sentence=None):
+        self.clauses = []
+        if sentence:
+            self.tell(sentence)
+
+    def tell(self, sentence):
+        """Add the sentence's clauses to the KB."""
+        self.clauses.extend(conjuncts(to_cnf(sentence)))
+
+
 def is_symbol(s):
     """A string s is a symbol if it starts with an aplphabetic char.
     >>> is_symbol('R2D2')
@@ -107,3 +120,16 @@ def pl_true(exp, model={}):
         return pt != qt
     else:
         raise ValueError("illegal operator in logic expression" + str(exp))
+
+
+def to_cnf(s):
+    """Convert a propositional logical sentence to conjuntive normal form.
+    That is, to the form((A | ~B)...) & (B | C | ...) & ...)[p. 253]
+    >>> to_cnf('~(B|C)')
+    (~B & ~C)
+    """
+    pass
+
+
+def conjuncts(s):
+    pass
