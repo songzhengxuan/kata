@@ -107,6 +107,8 @@ class TestWumpus(unittest.TestCase):
     def test_InitEnvironment(self):
         env = WumpusEnvrionment(lambda percept: None)
         print(env)
+        for thing in env.things:
+            print("thing ", thing, "at", thing.location)
 
 
 if __name__ == '__main__':

@@ -146,6 +146,7 @@ class Environment:
         """Add a thing to the environment, setting its location. For
         convenience, if thing is an agent program we make a new agent
         for it. (Shouldn't need to override this.)"""
+        print("add_thing called with ", thing, "to location", location)
         if not isinstance(thing, Thing):
             thing = Agent(thing)
         if thing in self.things:
@@ -440,10 +441,10 @@ class WumpusEnvrionment(XYEnvironment):
         "WUMPUS"
         w_x, w_y = self.random_location_inbounds(exclude=(1, 1))
         self.add_thing(Wumpus(lambda x: ""), (w_x, w_y), True)
-        self.add_thing(Stench, (w_x - 1, w_y), True)
-        self.add_thing(Stench, (w_x + 1, w_y), True)
-        self.add_thing(Stench, (w_x, w_y - 1), True)
-        self.add_thing(Stench, (w_x, w_y + 1), True)
+        self.add_thing(Stench(), (w_x - 1, w_y), True)
+        self.add_thing(Stench(), (w_x + 1, w_y), True)
+        self.add_thing(Stench(), (w_x, w_y - 1), True)
+        self.add_thing(Stench(), (w_x, w_y + 1), True)
 
         "GOLD"
         self.add_thing(Gold(), self.random_location_inbounds(
