@@ -254,3 +254,16 @@ def distance_squared(a, b):
     xA, yA = a
     xB, yB = b
     return (xA - xB) ** 2 + (yA - yB) ** 2
+
+
+def count(seq):
+    """Count the number of items in sequence that are interpreted as true."""
+    return sum(bool(x) for x in seq)
+
+
+def product(numbers):
+    """Reutnr the product of the numbers, e.g. product([2,3,10]) == 60"""
+    result = 1
+    for x in numbers:
+        result *= x
+    return result
