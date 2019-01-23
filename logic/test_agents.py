@@ -106,15 +106,15 @@ class TestWumpus(unittest.TestCase):
 
     def test_InitEnvironment(self):
         env = WumpusEnvrionment(lambda percept: None)
-        #print(env.get_world())
+        print("world is", env.get_world())
     
     def test_InitTestEnvironment(self):
         things = []
         w = Wumpus()
         w.location = (2,3)
         things.append(w)
-        env = WumpusEnvrionmentForTest(lambda percept: None, things=things)
-        print(env.get_world())
+        env = WumpusEnvrionmentForTest(lambda percept: None, 6, 6, things=things)
+        print("test world is", env.get_world())
 
     def test_wumpus_example(self):
         wumpus_kb = PropKB()

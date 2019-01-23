@@ -326,6 +326,9 @@ class XYEnvironment(Environment):
 
     def add_walls(self):
         """Put walls around the entire perimeter of the grid."""
+        print("add_walls called")
+        self.x_start, self.y_start = (0, 0)
+        self.x_end, self.y_end = (self.width, self.height)
         for x in range(self.width):
             self.add_thing(Wall(), (x, 0))
             self.add_thing(Wall(), (x, self.height - 1))
