@@ -106,9 +106,42 @@ class TestWumpus(unittest.TestCase):
 
     def test_InitEnvironment(self):
         env = WumpusEnvrionment(lambda percept: None)
-        print(env)
-        for thing in env.things:
-            print("thing ", thing, "at", thing.location)
+        #print(env.get_world())
+    
+    def test_InitTestEnvironment(self):
+        things = []
+        w = Wumpus()
+        w.location = (2,3)
+        things.append(w)
+        env = WumpusEnvrionmentForTest(lambda percept: None, things=things)
+        print(env.get_world())
+
+    def test_wumpus_example(self):
+        wumpus_kb = PropKB()
+        P11, P12, P21, P22, P31, B11, B21 = expr(
+            'P11, P12, P21, P22, P31, B11, B21')
+        wumpus_kb.tell(~P11)
+        wumpus_kb.tell(B11 | '<=>' | ((P12 | P21)))
+        wumpus_kb.tell(B21 | '<=>' | ((P11 | P22 | P31)))
+        wumpus_kb.tell(~B11)
+        wumpus_kb.tell(B21)
+        # Statement: There is no pit in [1,1].
+        self.assertTrue(wumpus_kb.ask(~P11) == {})
+
+        # Statement: There is no pit in [1,2].
+        self.assertTrue(wumpus_kb.ask(~P12) == {})
+
+        # Statement: There is a pit in [2,2].
+        self.assertTrue(wumpus_kb.ask(P22) is False)
+
+        # Statement: There is a pit in [3,1].
+        self.assertTrue(wumpus_kb.ask(P31) is False)
+
+        # Statement: Neither [1,2] nor [2,1] contains a pit.
+        self.assertTrue(wumpus_kb.ask(~P12 & ~P21) == {})
+
+        # Statement: There is a pit in either [2,2] or [3,1].
+        self.assertTrue(wumpus_kb.ask(P22 | P31) == {})
 
 
 if __name__ == '__main__':

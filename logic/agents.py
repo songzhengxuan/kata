@@ -1,4 +1,6 @@
-from utils import distance_squared, turn_heading
+from utils import (distance_squared, turn_heading)
+
+import agents
 
 import random
 import copy
@@ -146,7 +148,7 @@ class Environment:
         """Add a thing to the environment, setting its location. For
         convenience, if thing is an agent program we make a new agent
         for it. (Shouldn't need to override this.)"""
-        print("add_thing called with ", thing, "to location", location)
+        #print("add_thing called with ", thing, "to location", location)
         if not isinstance(thing, Thing):
             thing = Agent(thing)
         if thing in self.things:
@@ -577,3 +579,46 @@ class WumpusEnvrionment(XYEnvironment):
             print("Explorer calimbed out {}.".format(
                 "with Gold [+1000]!" if Gold() not in self.things else "without Gold[+0]"))
         return True
+
+class WumpusEnvrionmentForTest(WumpusEnvrionment):
+    def __init__(self, agent_program, width=6, height=6, things=[]):
+        super().__init__(agent_program, width, height)
+        self.things = []
+        self.agents = []
+        self.init_world_with_things(agent_program, things)
+    
+    def init_world_with_things(self, agent_program, things):
+        self.add_walls()
+        self.add_thing(Explorer(agent_program), (1, 1), True)
+        for thing in things:
+            if isinstance(thing, Pit):
+                if not hasattr(thing, 'location'):
+                    raise('have no location attr to add pit')
+                else:
+                    x,y = thing.location
+                    self.add_thing(thing, (x, y), True)
+                    self.add_thing(Breeze(), (x - 1, y), True)
+                    self.add_thing(Breeze(), (x, y - 1), True)
+                    self.add_thing(Breeze(), (x + 1, y), True)
+                    self.add_thing(Breeze(), (x, y+1), True)
+            elif isinstance(thing, Wumpus):
+                if not hasattr(thing, 'location'):
+                    raise('have no location attr to add Wumpus')
+                else:
+                    x,y = thing.location
+                    self.add_thing(thing, (x, y), True)
+                    self.add_thing(Stench(), (x - 1, y), True)
+                    self.add_thing(Stench(), (x, y - 1), True)
+                    self.add_thing(Stench(), (x + 1, y), True)
+                    self.add_thing(Stench(), (x, y+1), True)
+            elif isinstance(thing, Gold):
+                if not hasattr(thing, 'location'):
+                    raise('have no location attr to add Gold')
+                else:
+                    self.add_thing(thing, thing.location, True)
+            else:
+                raise("type not support to add by hand")
+                
+
+
+

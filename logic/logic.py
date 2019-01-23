@@ -2,6 +2,7 @@ from utils import (
     first, Expr, expr, subexpressions
 )
 
+from agents import *
 
 class KB:
 
@@ -166,7 +167,7 @@ def eliminate_implications(s):
     if not s.args or is_symbol(s.op):
         return s  # Atoms are unchanged.
     args = list(map(eliminate_implications, s.args))
-    a, b = args[0], args[1]
+    a, b = args[0], args[-1]
     if s.op == '==>':
         return b | ~a
     elif s.op == '<==':
@@ -217,9 +218,7 @@ def distribute_and_over_or(s):
     #s = Expr(s.op, firstParseArgs)
     if s.op == '|':
         for subarg in s.args:
-            print("subarg is ", subarg)
             if subarg.op == '&':
-                print("found and expr ", subarg)
                 otherArgs = [
                     otherArg for otherArg in s.args if otherArg != subarg]
 
@@ -295,6 +294,21 @@ def conjuncts(s):
     return dissociate('&', [s])
 
 
+def implies(lhs, rhs):
+    return Expr('==>', lhs, rhs)
+
+
+def equiv(lhs, rhs):
+    return Expr('<=>', lhs, rhs)
+
+
+def new_disjunction(sentences):
+    t = sentences[0]
+    for i in range(1, len(sentences)):
+        t |= sentences[i]
+    return t
+
+
 def variables(s):
     """Return a set of the variables in expression s.
     >>> variables(expor('F(x,x) & G(x,y) & H(y, z) & R(A,z,2)')) == {x,y,z}
@@ -349,3 +363,259 @@ def prop_symbols(x):
         return {x}
     else:
         return {symbol for arg in x.args for symbol in prop_symbols(arg)}
+
+def facing_east(time):
+    return Expr('FacingEast', time)
+
+def facing_west (time):
+    return Expr('FacingWest', time)
+
+def facing_north (time):
+    return Expr('FacingNorth', time)
+
+def facing_south (time):
+    return Expr('FacingSouth', time)
+
+def wumpus (x, y):
+    return Expr('W', x, y)
+
+def pit(x, y):
+    return Expr('P', x, y)
+
+def breeze(x, y):
+    return Expr('B', x, y)
+
+def stench(x, y):
+    return Expr('S', x, y)
+
+def wumpus_alive(time):
+    return Expr('WumpusAlive', time)
+
+def have_arrow(time):
+    return Expr('HaveArrow', time)
+
+def percept_stench(time):
+    return Expr('Stench', time)
+
+def percept_breeze(time):
+    return Expr('Breeze', time)
+
+def percept_glitter(time):
+    return Expr('Glitter', time)
+
+def percept_bump(time):
+    return Expr('Bump', time)
+
+def percept_scream(time):
+    return Expr('Scream', time)
+
+def move_forward(time):
+    return Expr('Forward', time)
+
+def shoot(time):
+    return Expr('Shoot', time)
+
+def turn_left(time):
+    return Expr('TurnLeft', time)
+
+def turn_right(time):
+    return Expr('TurnRight', time)
+
+def ok_to_move(x, y, time):
+    return Expr('OK', x, y, time)
+
+def location(x, y, time = None):
+    if time is None:
+        return Expr('L', x, y)
+    else:
+        return Expr('L', x, y, time)
+
+class WumpusKB(PropKB):
+    """Create a Knowledge Base that contains the atemporal "Wumpus physics" and temporal rules with time zero."""
+
+    def __init__(self, dimrow):
+        super().__init__()
+        self.dimrow = dimrow
+        self.tell(~wumpus(1, 1))
+        self.tell(~pit(1, 1))
+
+        for y in range(1, dimrow + 1):
+            for x in range(1, dimrow + 1):
+                pits_in = list()
+                wumpus_in = list()
+
+                if x > 1:
+                    pits_in.append(pit(x - 1, y))
+                    wumpus_in.append(wumpus(x - 1, y))
+
+                if y < dimrow:
+                    pits_in.append(pit(x, y + 1))
+                    wumpus_in.append(wumpus(x, y + 1))
+
+                if x < dimrow:
+                    pits_in.append(pit(x + 1, y))
+                    wumpus_in.append(wumpus(x + 1, y))
+
+                if y > 1:
+                    pits_in.append(pit(x, y - 1))
+                    pits_in.append(wumpus(x, y - 1))
+
+                self.tell(equiv(breeze(x, y), new_disjunction(pits_in)))
+                self.tell(equiv(stench(x, y), new_disjunction(wumpus_in)))
+
+        ## Rule that describes existence of at least one Wumpus
+        wumpus_at_least = list()
+        for x in range(1, dimrow+1):
+            for y in range(1, dimrow+1):
+                wumpus_at_least.append(wumpus(x, y))
+        
+        self.tell(new_disjunction(wumpus_at_least))
+
+        ## Rule that describes existence of at most one Wumpus
+        for i in range(1, dimrow+1):
+            for j in range(1, dimrow+1):
+                for u in range(1, dimrow+1):
+                    for v in range(1, dimrow+1):
+                        if i!=u or j!=v:
+                            self.tell(~wumpus(i, j) | ~wumpus(u, v))
+        
+        ## Temporal rules at time zero
+        self.tell(location(1, 1, 0))
+        for i in range(1, dimrow+1):
+            for j in range(1, dimrow+1):
+                self.tell(implies(location(i, j, 0), equiv(percept_breeze(0), breeze(i, j))))
+                self.tell(implies(location(i, j, 0), equiv(percept_stench(0), stench(i, j))))
+                if i != 1 or j != 1:
+                    self.tell(~location(i, j, 0))
+        
+        self.tell(wumpus_alive(0))
+        self.tell(have_arrow(0))
+        self.tell(facing_east(0))
+        self.tell(~facing_north(0))
+        self.tell(~facing_south(0))
+        self.tell(~facing_west(0))
+    
+    def make_action_sentence(self, action, time):
+        actions = [move_forward(time), shoot(time), turn_right(time), turn_right(time)]
+
+        for a in actions:
+            if action is a:
+                self.tell(action)
+            else:
+                self.tell(~a)
+    
+    def make_percept_sentence(self, percept, time):
+        # Glitter, Bump, Stench, Breeze, Scream
+        flags = [0, 0, 0, 0, 0]
+
+        ## Things perceived
+        if isinstance(percept, Glitter):
+            flags[0] = 1
+            self.tell(percept_glitter(time))
+        elif isinstance(percept, Bump):
+            flags[1] = 1
+            self.tell(percept_bump(time))
+        elif isinstance(percept, Stench):
+            flags[2] = 1
+            self.tell(percept_stench(time))
+        elif isinstance(percept, Breeze):
+            flags[3] = 1
+            self.tell(percept_breeze(time))
+        elif isinstance(percept, Scream):
+            flags[4] = 1
+            self.tell(percept_scream(time))
+        
+        ## Things not perceived
+        for i in len(range(flags)):
+            if flags[i] == 0:
+                if i == 0:
+                    self.tell(~percept_glitter(time))
+                elif i == 1:
+                    self.tell(~percept_bump(time))
+                elif i == 2:
+                    self.tell(~percept_stench(time))
+                elif i == 3:
+                    self.tell(~percept_breeze(time))
+                elif i == 4:
+                    self.tell(~percept_scream(time))
+    
+    def add_temporal_sentences(self, time):
+        if time == 0:
+            return 
+        t = time - 1
+
+        ## current location rules
+        for i in range(1, self.dimrow+1):
+            for j in range(1, self.dimrow+1):
+                self.tell(implies(location(i, j, time), equiv(percept_breeze(time), breeze(i, j))))
+                self.tell(implies(location(i, j, time), equiv(percept_stench(time), stench(i, j))))
+
+                s = list()
+
+                # the agent will stay in i, j after time if it not move in time
+                s.append(
+                    equiv(
+                        location(i, j, time),
+                        location(i, j, time) & ~move_forward(time) | percept_bump(time)
+                    ))
+                
+                if i != 1:
+                    s.append(location(i - 1, j, t) & facing_east(t) & move_forward(t))
+                if i != self.dimrow:
+                    s.append(location(i+1, j, t) & facing_west(t) & move_forward(t))
+                if j != 1:
+                    s.append(location(i, j - 1, t) & facing_north(t) & move_forward(t))
+                if j != self.dimrow:
+                    s.append(location(i, j + 1, t) & facing_south(t) & move_forward(t))
+                
+                ## add sentence about location i, j
+                self.tell(new_disjunction(s))
+
+                ## add sentence about safety of location i, j
+                self.tell(
+                    equiv(ok_to_move(i, j, time), ~pit(i, j) & ~wumpus(i, j) & wumpus_alive(time) )
+                )
+
+        ## Rules about current orientation
+
+        a = facing_north(t) & turn_right(t)
+        b = facing_south(t) & turn_left(t)
+        c = facing_east(t) & ~turn_left(t) & ~turn_right(t)
+        s = equiv(facing_east(time), a | b | c)
+        self.tell(s)
+
+        a = facing_north(t) & turn_left(t)
+        b = facing_south(t) & turn_right(t)
+        c = facing_west(t) & ~turn_left(t) & ~turn_right(t)
+        s = equiv(facing_west(time), a | b | c)
+        self.tell(s)
+
+        a = facing_west(t) & turn_left(t)
+        b = facing_east(t) & turn_right(t)
+        c = facing_south(t) & ~turn_left(t) & ~turn_right(t)
+        s = equiv(facing_south(time), a | b | c)
+        self.tell(s)
+
+        a = facing_west(t) & turn_right(t)
+        b = facing_east(t) & turn_left(t)
+        c = facing_north(t) & ~turn_left(t) & ~turn_right(t)
+        s = equiv(facing_north(time), a | b | c)
+        self.tell(s)
+
+        ## Rules about last action
+        self.tell(equiv(move_forward(t), ~turn_right(t) & ~turn_left(t)))
+
+        ## Rules about the arrow
+        self.tell(equiv(have_arrow(time), have_arrow(t) & ~shoot(t)))
+
+        ## Rule about Wumpus (dead or alive)
+        self.tell(equiv(wumpus_alive(time), wumpus_alive(t) & ~percept_scream(time)))
+    
+    def ask_if_true(self, query):
+        return pl_true(self, query)
+
+
+            
+
+        
+        
