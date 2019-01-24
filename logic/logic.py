@@ -614,6 +614,19 @@ class WumpusKB(PropKB):
     def ask_if_true(self, query):
         return pl_true(self, query)
 
+class HybridWumpusAgent(Agent):
+    def __init__(self, dimentions):
+        self.dimrow = dimentions
+        self.kb = WumpusKB(self.dimrow)
+        self.t = 0
+        self.plan = list()
+        self.current_position = WumpusPosition(1, 1, 'UP')
+        super().__init__(self.execute
+    
+    def execute(self, percept):
+        pass
+
+
 
             
 

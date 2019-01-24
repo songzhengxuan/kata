@@ -111,10 +111,15 @@ class TestWumpus(unittest.TestCase):
     def test_InitTestEnvironment(self):
         things = []
         w = Wumpus()
-        w.location = (2,3)
+        w.location = (1,2)
         things.append(w)
         env = WumpusEnvrionmentForTest(lambda percept: None, 6, 6, things=things)
         print("test world is", env.get_world())
+        agent = Explorer()
+        agent.location = (1,1)
+        percepts = env.percepts_from(agent, (1,1))
+        print("percepts is ", percepts)
+        self.assertTrue(len(percepts) > 1)
 
     def test_wumpus_example(self):
         wumpus_kb = PropKB()
