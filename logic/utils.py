@@ -267,3 +267,8 @@ def product(numbers):
     for x in numbers:
         result *= x
     return result
+
+def print_world(world):
+    for row in world:
+        print(row)
+

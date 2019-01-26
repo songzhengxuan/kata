@@ -330,11 +330,11 @@ class XYEnvironment(Environment):
         self.x_start, self.y_start = (0, 0)
         self.x_end, self.y_end = (self.width, self.height)
         for x in range(self.width):
-            self.add_thing(Wall(), (x, 0))
-            self.add_thing(Wall(), (x, self.height - 1))
+            self.add_thing(Wall(), (x, 0), True)
+            self.add_thing(Wall(), (x, self.height - 1), True)
         for y in range(self.height):
-            self.add_thing(Wall(), (0, y))
-            self.add_thing(Wall(), (self.width - 1, y))
+            self.add_thing(Wall(), (0, y), True)
+            self.add_thing(Wall(), (self.width - 1, y), True)
 
         # Updates interation start and end (with walls)
         self.x_start, self.y_start = (1, 1)
@@ -413,6 +413,9 @@ class Explorer(Agent):
     has_arrow = True
     killed_by = ""
     direction = Direction("right")
+
+    def __init__(self, program):
+        super().__init__(program)
 
     def can_grab(self, thing):
         """Explorer can only grab gold"""
@@ -592,7 +595,6 @@ class WumpusEnvrionmentForTest(WumpusEnvrionment):
     
     def init_world_with_things(self, agent_program, things):
         self.add_walls()
-        self.add_thing(Explorer(agent_program), (1, 1), True)
         for thing in things:
             if isinstance(thing, Pit):
                 if not hasattr(thing, 'location'):
@@ -619,6 +621,8 @@ class WumpusEnvrionmentForTest(WumpusEnvrionment):
                     raise('have no location attr to add Gold')
                 else:
                     self.add_thing(thing, thing.location, True)
+            elif isinstance(thing, Agent):
+                self.add_thing(thing, thing.location, True)
             else:
                 raise("type not support to add by hand")
                 

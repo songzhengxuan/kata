@@ -110,16 +110,49 @@ class TestWumpus(unittest.TestCase):
     
     def test_InitTestEnvironment(self):
         things = []
-        w = Wumpus()
+        w = Wumpus(lambda x: "")
         w.location = (1,2)
         things.append(w)
         env = WumpusEnvrionmentForTest(lambda percept: None, 6, 6, things=things)
         print("test world is", env.get_world())
-        agent = Explorer()
+        agent = Explorer(lambda x:"")
         agent.location = (1,1)
         percepts = env.percepts_from(agent, (1,1))
         print("percepts is ", percepts)
-        self.assertTrue(len(percepts) > 1)
+        self.assertTrue(len(percepts) >= 1)
+    
+    def test_death(self):
+        things = []
+
+        w = Wumpus(lambda x:"")
+        w.location = (1,3)
+        things.append(w)
+
+        w2 = Wumpus(lambda x:"")
+        w2.location = (2,1)
+        things.append(w2)
+
+
+        agent = HybridWumpusAgent(4)
+        agent.location = (1,1)
+        things.append(agent)
+
+        self.assertTrue(isinstance(agent.execute, collections.Callable))
+        print("execute type is ", agent.execute, isinstance(agent.execute, collections.Callable))
+        env = WumpusEnvrionmentForTest(None, 6, 6, things=things)
+        print("test world is") 
+        print_world(env.get_world())
+        self.assertFalse(env.is_done())
+        env.step()
+        print("after 1 step world is ")
+        print("test world is") 
+        print_world(env.get_world())
+        self.assertFalse(env.is_done())
+        env.step()
+        print("after 2 step world is ")
+        print("test world is") 
+        print_world(env.get_world())
+        self.assertTrue(env.is_done())
 
     def test_wumpus_example(self):
         wumpus_kb = PropKB()
