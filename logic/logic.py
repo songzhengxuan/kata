@@ -614,7 +614,7 @@ class WumpusKB(PropKB):
     def ask_if_true(self, query):
         return pl_true(self, query)
 
-class WumpusPosition():
+class WumpusPosition(object):
     """
     WumpusPosition.orientation: UP, DOWN, LEFT, RIGHT
     """
@@ -642,6 +642,12 @@ class WumpusPosition():
             return True
         else:
             return False
+    
+    def __repr__(self):
+        return "({},{},{})".format(self.X, self.Y, self.orientation)
+
+    def __hash__(self):
+        return id(self)
 
 
 class HybridWumpusAgent(Explorer):

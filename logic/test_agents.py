@@ -102,6 +102,8 @@ class TestKB(unittest.TestCase):
         self.assertTrue(kb.ask(C) == False)
 
 
+            
+
 class TestWumpus(unittest.TestCase):
 
     def test_InitEnvironment(self):
