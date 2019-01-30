@@ -169,6 +169,26 @@ class TestWumpus(unittest.TestCase):
 
         env = WumpusEnvrionmentForTest(None, 6, 6, things=things)
         self.assertTrue(agent.kb.ask(ok_to_move(1,2,0)) == {})
+        print("kB is ", agent.kb)
+    
+    def test_not_ok_to_move_judge(self):
+        things = []
+
+        w = Wumpus(lambda x:"")
+        w.location = (2,1)
+        things.append(w)
+        
+        agent = HybridWumpusAgent(4)
+        agent.location = (1,1)
+        things.append(agent)
+
+        env = WumpusEnvrionmentForTest(None, 6, 6, things=things)
+        percepts = env.percept(agent)
+        print("percepts is ", percepts)
+        agent.kb.add_temporal_sentences(0)
+        isOkToMove = agent.kb.ask(ok_to_move(1,2,0))
+        self.assertFalse(isOkToMove)
+        print("kB is ", agent.kb.clauses)
 
 
     def test_wumpus_example(self):
