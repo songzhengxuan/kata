@@ -526,7 +526,7 @@ class WumpusKB(PropKB):
             self.tell(percept_scream(time))
         
         ## Things not perceived
-        for i in len(range(flags)):
+        for i in range(len(flags)):
             if flags[i] == 0:
                 if i == 0:
                     self.tell(~percept_glitter(time))
@@ -660,6 +660,8 @@ class HybridWumpusAgent(Explorer):
         self.current_position = WumpusPosition(1, 1, 'UP')
     
     def execute(self, percept):
+        self.kb.add_temporal_sentences(self.t)
+        self.kb.make_percept_sentence(percept, self.t)
         return 'Forward'
 
 

@@ -155,6 +155,21 @@ class TestWumpus(unittest.TestCase):
         print("test world is") 
         print_world(env.get_world())
         self.assertTrue(env.is_done())
+    
+    def test_ok_to_move_judge(self):
+        things = []
+
+        w = Wumpus(lambda x:"")
+        w.location = (3,1)
+        things.append(w)
+
+        agent = HybridWumpusAgent(4)
+        agent.location = (1,1)
+        things.append(agent)
+
+        env = WumpusEnvrionmentForTest(None, 6, 6, things=things)
+        self.assertTrue(agent.kb.ask(ok_to_move(1,2,0)) == {})
+
 
     def test_wumpus_example(self):
         wumpus_kb = PropKB()
