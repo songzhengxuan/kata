@@ -51,8 +51,16 @@ class TestEnvironment(unittest.TestCase):
 class TestExpr(unittest.TestCase):
     def test_cnfBase(self):
         self.assertTrue(expr('Q') == Expr('Q'))
-
         self.assertTrue(expr('A & B') == Expr('&', Expr('A'), Expr('B')))
+        a = expr('A <=> B')
+        b = Expr('&', A |'==>'|B, B |'==>'|A)
+        print("to_cnf a ", to_cnf(a))
+        print("to_cnf b ", to_cnf(b))
+        self.assertTrue(str(to_cnf(a)) == str(to_cnf(b)))
+    
+    def test_cnfEquiv(self):
+        a = equiv(A, B|C)
+        print("equiv string is ", to_cnf(a))
 
     def test_move_not_inwards(self):
         self.assertEqual(move_not_inwards(~(A | B)), (~A & ~B))
@@ -70,8 +78,10 @@ class TestExpr(unittest.TestCase):
 
     def test_prop_symbols(self):
         a = (A & B) | C
-        self.assertEquals(prop_symbols(a), {A, B, C})
-        self.assertEquals(prop_symbols(a), {A, C, B})
+        self.assertEqual(prop_symbols(a), {A, B, C})
+        self.assertEqual(prop_symbols(a), {A, C, B})
+        a = location(1, 1, 0)
+        print(prop_symbols(a))
 
     def test_tt_entails(self):
         a = (A & B)
@@ -110,6 +120,13 @@ class TestWumpus(unittest.TestCase):
         env = WumpusEnvrionment(lambda percept: None)
         print("world is", env.get_world())
     
+    def test_kb(self):
+        kb = WumpusKB(2)
+        shouldFalse = kb.ask_if_true(location(2,1,0))
+        self.assertFalse(shouldFalse)
+        shouldTrue = kb.ask_if_true(location(1,1,0))       
+        self.assertTrue(shouldTrue)
+    
     def test_InitTestEnvironment(self):
         things = []
         w = Wumpus(lambda x: "")
@@ -122,6 +139,7 @@ class TestWumpus(unittest.TestCase):
         percepts = env.percepts_from(agent, (1,1))
         print("percepts is ", percepts)
         self.assertTrue(len(percepts) >= 1)
+    
     
     def test_death(self):
         things = []
@@ -142,6 +160,9 @@ class TestWumpus(unittest.TestCase):
         self.assertTrue(isinstance(agent.execute, collections.Callable))
         print("execute type is ", agent.execute, isinstance(agent.execute, collections.Callable))
         env = WumpusEnvrionmentForTest(None, 6, 6, things=things)
+        print("agent's kb is ")
+        for c in agent.kb.clauses:
+            print("\t", c)
         print("test world is") 
         print_world(env.get_world())
         self.assertFalse(env.is_done())
@@ -171,7 +192,7 @@ class TestWumpus(unittest.TestCase):
         self.assertTrue(agent.kb.ask(ok_to_move(1,2,0)) == {})
         print("kB is ", agent.kb)
     
-    def test_not_ok_to_move_judge(self):
+    def test_not_ok_to_move(self):
         things = []
 
         w = Wumpus(lambda x:"")

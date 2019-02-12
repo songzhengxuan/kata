@@ -4,6 +4,16 @@ import math
 import heapq
 import functools
 
+def removeall(item, seq):
+    """Return a copy oof seq (or string) with all occurrences of tiem removed."""
+    if isinstance(seq, str):
+        return seq.replace(item, '')
+    else:
+        return [x for x in seq if x != item]
+
+def unique(seq):  # TODO: replace with set
+    """Remove duplicate elements from seq. Assumes hashable elements."""
+    return list(set(seq))
 
 def first(iterable, default=None):
     """return the firt element of an iterable or the next element of a generator; or default"""

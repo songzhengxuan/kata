@@ -1,5 +1,5 @@
 from utils import (
-    first, Expr, expr, subexpressions
+    first, Expr, expr, subexpressions, removeall,unique
 )
 
 from agents import *
@@ -204,8 +204,34 @@ def move_not_inwards(s):
     else:
         return Expr(s.op, *list(map(move_not_inwards, s.args)))
 
-
 def distribute_and_over_or(s):
+    """Given a sentence s consisting of conjunctions and disjunctions
+    of literals, return an equivalent sentence in CNF.
+    >>> distribute_and_over_or((A & B) | C)
+    ((A | C) & (B | C))
+    """
+    s = expr(s)
+    if s.op == '|':
+        s = associate('|', s.args)
+        if s.op != '|':
+            return distribute_and_over_or(s)
+        if len(s.args) == 0:
+            return False
+        if len(s.args) == 1:
+            return distribute_and_over_or(s.args[0])
+        conj = first(arg for arg in s.args if arg.op == '&')
+        if not conj:
+            return s
+        others = [a for a in s.args if a is not conj]
+        rest = associate('|', others)
+        return associate('&', [distribute_and_over_or(c | rest)
+                               for c in conj.args])
+    elif s.op == '&':
+        return associate('&', list(map(distribute_and_over_or, s.args)))
+    else:
+        return s
+
+def distribute_and_over_or_withbug(s):
     """Given a sentence s consisting of conjunctions and disjunctions
     of literals, return an equivalent sentence in CNF.
     >>> distribute_and_over_or((A & B) | C)
@@ -232,10 +258,8 @@ def distribute_and_over_or(s):
                     for t in subarg.args:
                         newArgs.append(Expr('|', t, otherExpr))
 
-                print("newArgs is ", newArgs)
                 toReturn = Expr('&')
                 toReturn.args = tuple(newArgs)
-                print("toReturn is ", toReturn)
                 return toReturn
     else:
         newArgs = []
@@ -282,6 +306,15 @@ def dissociate(op, args):
                 result.append(arg)
     collect(args)
     return result
+
+def disjuncts(s):
+    """Return a list of the disjuncts in the sentence s.
+    >>> disjuncts(A|B)
+    [A, B]
+    >>> disjuncts(A & B)
+    [(A & B)]
+    """
+    return dissociate('|', [s])
 
 
 def conjuncts(s):
@@ -330,19 +363,29 @@ def tt_entails(kb, alpha):
     True
     """
     model = {}
+    print("in tt_entails, kb & aplha is ", prop_symbols(kb & alpha))
     symbols = list(prop_symbols(kb & alpha))
+    print("in tt_entails, symbols is ", symbols)
     return tt_check_all(kb, alpha, symbols, model)
 
 
 def tt_check_all(kb, alpha, symbols, model):
+    print("tt_check_all called ============ with symbols===========", symbols)
+    print("     and kb is ")
+    for c in kb.args:
+        print("     ", c)
+    print("     and models is ")
+    for k, v in model.items():
+        print("\t\t", k, v)
     if not symbols:
         if pl_true(kb, model):
             return pl_true(alpha, model)
         else:
             return True
     else:
-        p, reset = symbols[0], symbols[1:]
-        return tt_check_all(kb, alpha, reset, extends(model, p, True))and tt_check_all(kb, alpha, reset, extends(model, p, False))
+        p, rest = symbols[0], symbols[1:]
+        print("tt_check_all, p, rest ", p, rest)
+        return tt_check_all(kb, alpha, rest, extends(model, p, True))and tt_check_all(kb, alpha, rest, extends(model, p, False))
 
 
 def extends(s, var, value):
@@ -359,10 +402,73 @@ def prop_symbols(x):
     """Return the set of all propositional symbols in x."""
     if not isinstance(x, Expr):
         return set()
-    if is_prop_symbol(x.op) and not x.args:
+    if is_prop_symbol(x.op):
         return {x}
     else:
         return {symbol for arg in x.args for symbol in prop_symbols(arg)}
+
+def pl_resolution(KB, alpha):
+    """Propositional-logic resolution: say if alpha follows from KB
+    >>> pl_resolution(horn_clauses_KB, A)
+    True
+    """
+    clauses = KB.clauses + conjuncts(to_cnf(~alpha))
+    new = set()
+    while True:
+        n = len(clauses)
+        print(" before a resolution loop, all clause is ")
+        for c in clauses:
+            print("\t\t", c)
+            if c == alpha:
+                print("query is a known True")
+                return True
+            elif c == ~alpha:
+                print("query is a known False")
+                return False 
+            else:
+                print(c, "!=", alpha)
+        pairs = [(clauses[i], clauses[j]) for i in range(n) for j in range(i+1, n)]
+        for (ci, cj) in pairs:
+            resolvents = pl_resolve(ci, cj)
+            if False == resolvents:
+                return True
+            if True != resolvents: # True value is useless
+                new = new.union(set({resolvents}))
+        if new.issubset(set(clauses)):
+            return False
+        for c in new:
+            if c not in clauses:
+                clauses.append(c)
+
+def pl_resolve(ci, cj):
+    """Return al clauses that can be obtained by resolving clauses ci and cj."""
+    clauses = set()
+    clauses = clauses.union(set(disjuncts(ci)))
+    clauses = clauses.union(set(disjuncts(cj)))
+    needBreak = False
+    for di in disjuncts(ci):
+        if needBreak:
+            break
+        for dj in disjuncts(cj):
+            if di == ~dj or ~di == dj:
+                clauses = removeall(di, clauses)
+                clauses = removeall(dj, clauses)
+                needBreak = True
+                break
+    result = False
+    if not clauses:
+        result = False
+    else:
+        #check if we resolve a TRUE clauses, which is useless
+        for di in clauses:
+            for dj in clauses:
+                if di == ~dj or ~di == dj:
+                    return True
+        result = associate('|', clauses)
+    print("pl_resolve called with {}, {}, and to return:{}".format(ci, cj, result))
+    return result 
+
+
 
 def facing_east(time):
     return Expr('FacingEast', time)
@@ -612,7 +718,7 @@ class WumpusKB(PropKB):
         self.tell(equiv(wumpus_alive(time), wumpus_alive(t) & ~percept_scream(time)))
     
     def ask_if_true(self, query):
-        return pl_true(self, query)
+        return pl_resolution(self, query)
 
 class WumpusPosition(object):
     """
@@ -662,7 +768,27 @@ class HybridWumpusAgent(Explorer):
     def execute(self, percept):
         self.kb.add_temporal_sentences(self.t)
         self.kb.make_percept_sentence(percept, self.t)
+        temp = list()
+        for i in range(1, self.dimrow+1):
+            for j in range(1, self.dimrow+1):
+                if self.kb.ask_if_true(location(i,j,self.t)):
+                    temp.append(i)
+                    temp.append(j)
+        print("temp is ", temp)
+        #assert len(temp) == 2
+
+        if self.kb.ask_if_true(facing_north(self.t)):
+            self.current_position = WumpusPosition(temp[0], temp[1], 'UP')
+        elif self.kb.ask_if_true(facing_south(self.t)):
+            self.current_position = WumpusPosition(temp[0], temp[1], 'DOWN')
+        elif self.kb.ask_if_true(facing_west(self.t)):
+            self.current_position = WumpusPosition(temp[0], temp[1], 'LEFT')
+        elif self.kb.ask_if_true(facing_east(self.t)):
+            self.current_position = WumpusPosition(temp[0], temp[1], 'RIGHT')
+        
+        print("agent's position at {} is {}", self.t, self.current_position)
         return 'Forward'
+
 
 
 
