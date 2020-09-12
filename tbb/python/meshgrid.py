@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import ctypes
+from ctypes import *
 
 def test_draw():
     points = [
@@ -52,13 +54,13 @@ def test():
     plt.show()    
 
 class world:
-    def __init__(this, width, height):
-        this.width = width
-        this.height = height
-        this.arr = [0]*(width*height)
-        this.arr[0] = 1
-        this.arr[width] = 1
-        this.arr[width * height - 1] = 1
+    def __init__(self, width, height):
+        self.width = width
+        self.height = height
+        self.arr = (c_int * (width*height))()
+        self.arr[0] = 1
+        self.arr[width] = 1
+        self.arr[width * height - 1] = 1
 
 def draw_world(_world):
     show_grid((_world.width, _world.height), _world.arr)
@@ -69,7 +71,13 @@ def init():
 if __name__ == "__main__":
     #show_grid((3, 2), [1,0,0,1,1,1])
     #test()
+    ll = ctypes.cdll.LoadLibrary  
+    clib = ll("/Users/song/github/kata/tbb/python/libpycall.so")
     a = world(100, 100)
+    clib.process(a.width, a.height, a.arr)
+    clib.process(a.width, a.height, a.arr)
+    clib.process(a.width, a.height, a.arr)
+    clib.process(a.width, a.height, a.arr)
     draw_world(a)
     
     pass
